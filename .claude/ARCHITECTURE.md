@@ -49,6 +49,7 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 
 ### Jobs (`/jobs`)
 - `page.tsx` — server component. Pre-fetches candidate profile + existing applications to hydrate `initialApplied`. Derives `allSkills` from all jobs and passes to `JobsClientView.tsx`.
+- Company name on job cards comes from the `employer_profiles(company_name)` embed on the `jobs` select. `employer_profiles` has no blanket public-read policy - only "own" (migration 001) plus "public read when hiring", gated through the `employer_is_hiring(uuid)` SECURITY DEFINER function (migration 008) so an employer's row is only readable while they have ≥1 open job. See the RLS-recursion gotcha in `.claude/CLAUDE.md` before touching either policy.
 - `JobsClientView.tsx` — client component. Filters: keyword, location, employment type (Select), salary min (RM, null-salary jobs always pass), skill badges (multi-select, all must be present). Filtering via `useMemo` — no `useEffect`. "Clear" appears only when a filter is active.
 - `ApplyButton.tsx` — step state machine: `idle → generating → editing → submitting`. Calls `/api/ai/cover-note` on Apply; editable textarea pre-filled with AI note. Both "Submit" and "Skip note" insert into `applications`. Cancel resets to idle. Generation failures fall through silently to editing with empty textarea.
 - `FitScore.tsx` — calls `/api/ai/job-fit` on mount per card. Color-coded pill: ≥70 `--success`, 40–69 `--accent`, <40 `--text-muted`. Skeleton pulses during load; hides on error. Guarded by `candidateProfile` existence.
