@@ -38,11 +38,11 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 | `/api/ai/coach` | POST | candidate | maxOutputTokens 1024, 10-message sliding window, tool-calling loop (`stopWhen: stepCountIs(5)`) with 5 tools: `findMatchingJobs`, `getSalaryBenchmarks`, `addSkillToProfile`, `getCareerPathOptions` (reuses `lib/career-path.ts`'s `findShortestPath`), `getApplicationStatus` |
 | `/api/ai/cover-note` | POST | candidate | maxOutputTokens 512, takes `{ jobId }` |
 | `/api/ai/skill-gap` | POST | candidate | maxOutputTokens 800, takes `{ currentRole, targetRole, missingSkills }` |
-| `/api/ai/job-fit` | POST | candidate | maxOutputTokens 256, returns `{ score: 0-100, summary }` |
+| `/api/ai/job-fit` | POST | candidate | **no Groq call** — deterministic case-insensitive skill-overlap scoring (`matched/required * 100`, empty `required_skills` → neutral 50) with a templated one-sentence summary; returns `{ score: 0-100, summary }` |
 | `/api/ai/jd-writer` | POST | employer | maxOutputTokens 800, takes `{ title, location, employmentType, skills, roughNotes }` |
 | `/api/ai/re-engage` | POST | employer | deterministically excludes candidates who've already applied to any of the employer's open jobs (queried before prompting, not left to the model - see Gotchas) before asking the LLM to rank fits; text+regex-parsed JSON output; wrapped in try/catch, returns `{ suggestions: [] }` on any generation failure; returns up to 5 `ReEngageSuggestion[]` |
 | `/api/certificates/coursera` | POST | — | server-side fetch + OG tag parse, SSRF-guarded |
-| `/api/certificates/skills-suggest` | POST | — | Groq, up to 6 skills |
+| `/api/certificates/skills-suggest` | POST | — | keyword pre-filter first: regex-matches the cert `title`+`institution` against all 37 canonical `skills.name` values (lookaround boundaries, not `\b`, so `Node.js`/`CI/CD` match correctly and `Go` doesn't false-match inside `Google`); only calls Groq as a fallback when the keyword pass finds zero matches; up to 6 skills either way |
 | `/api/resumes/parse` | POST | candidate | Groq, maxOutputTokens 2048 |
 
 ---

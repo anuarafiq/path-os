@@ -1,6 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { groq, MODEL } from "@/lib/claude/client";
-import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/validate";
@@ -34,44 +32,44 @@ export async function POST(req: Request) {
 
   const { data: candidate } = await supabase
     .from("candidate_profiles")
-    .select("current_role, seeking, years_exp, candidate_skills(skills(name))")
+    .select("years_exp, candidate_skills(skills(name))")
     .eq("profile_id", profile.id)
     .single();
 
   if (!candidate) return NextResponse.json({ error: "No candidate profile" }, { status: 404 });
 
-  const skills = (candidate.candidate_skills as unknown as { skills: { name: string } | null }[])
+  const candidateSkillNames = (candidate.candidate_skills as unknown as { skills: { name: string } | null }[])
     ?.map((s) => s.skills?.name)
-    .filter(Boolean)
-    .join(", ") || "Not specified";
+    .filter((n): n is string => Boolean(n)) ?? [];
+  const candidateSkillsLower = candidateSkillNames.map((s) => s.toLowerCase());
 
-  const prompt = `You are a job fit evaluator. Score how well this candidate fits the job.
-Return ONLY JSON (no markdown, no explanation): { "score": <0-100>, "summary": "<one sentence why they fit or don't>" }
+  const requiredSkills: string[] = job.required_skills ?? [];
 
-Job: ${job.title}
-Required skills: ${(job.required_skills ?? []).join(", ") || "Not specified"}
-Location: ${job.location ?? "Not specified"}
-
-Candidate current role: ${candidate.current_role ?? "Not specified"}
-Candidate seeking: ${candidate.seeking ?? "Not specified"}
-Candidate experience: ${candidate.years_exp ?? 0} years
-Candidate skills: ${skills}`;
-
-  const { text } = await generateText({
-    model: groq(MODEL),
-    prompt,
-    maxOutputTokens: 256,
-  });
-
-  let result = { score: 0, summary: "" };
-  try {
-    result = JSON.parse(text);
-  } catch {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) {
-      try { result = JSON.parse(match[0]); } catch { /* silent */ }
-    }
+  if (requiredSkills.length === 0) {
+    return NextResponse.json({
+      score: 50,
+      summary: `${job.title} doesn't list specific required skills, so fit can't be scored on skills.`,
+    });
   }
 
-  return NextResponse.json(result);
+  const matched = requiredSkills.filter((rs) => candidateSkillsLower.includes(rs.toLowerCase()));
+  const missing = requiredSkills.filter((rs) => !candidateSkillsLower.includes(rs.toLowerCase()));
+  const score = Math.round((matched.length / requiredSkills.length) * 100);
+
+  const expClause = candidate.years_exp
+    ? ` with ${candidate.years_exp} year${candidate.years_exp === 1 ? "" : "s"} of experience`
+    : "";
+
+  let summary: string;
+  if (candidateSkillNames.length === 0) {
+    summary = `No skills on file to compare against ${job.title}'s required skills (${requiredSkills.join(", ")}).`;
+  } else if (matched.length === 0) {
+    summary = `None of the candidate's skills match ${job.title}'s required skills (${requiredSkills.join(", ")}).`;
+  } else if (missing.length === 0) {
+    summary = `Strong fit, has all required skills (${matched.join(", ")})${expClause}.`;
+  } else {
+    summary = `Matches ${matched.length} of ${requiredSkills.length} required skills (${matched.join(", ")}); missing ${missing.join(", ")}${expClause}.`;
+  }
+
+  return NextResponse.json({ score, summary });
 }

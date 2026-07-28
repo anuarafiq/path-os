@@ -10,6 +10,16 @@ const Body = z.object({
   institution: z.string().max(300).optional(),
 });
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function matchSkillsInText(text: string, canonicalSkills: { name: string }[]): string[] {
+  return canonicalSkills
+    .filter((skill) => new RegExp(`(?<![a-z0-9])${escapeRegex(skill.name)}(?![a-z0-9])`, "i").test(text))
+    .map((skill) => skill.name);
+}
+
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -18,6 +28,13 @@ export async function POST(req: Request) {
   const parsed = await parseBody(req, Body);
   if ("error" in parsed) return parsed.error;
   const { title, institution } = parsed.data;
+
+  const { data: canonicalSkills } = await supabase.from("skills").select("name");
+  const keywordMatches = matchSkillsInText(`${title} ${institution ?? ""}`, canonicalSkills ?? []);
+
+  if (keywordMatches.length > 0) {
+    return NextResponse.json({ skills: keywordMatches.slice(0, 6) });
+  }
 
   const prompt = `Given the certificate "${title}"${institution ? ` from "${institution}"` : ""}, list up to 6 specific technical skills this course teaches. Return ONLY a JSON array of skill name strings. Example: ["React", "TypeScript", "CSS"]. No explanation, no markdown, just the array.`;
 
