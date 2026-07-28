@@ -1,6 +1,6 @@
 # Path OS - TODO
 
-> Talentbank Hackathon 2026 · Intent Form **15 Jun** · Stage 2 build **26 Jul**
+> Intent Form **15 Jun** · Stage 2 build **26 Jul**
 
 ## Blockers (nothing renders without these)
 

@@ -27,7 +27,7 @@ export default function Home() {
       {/* Hero */}
       <section className="flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-24 text-center">
         <div className="inline-flex items-center gap-2 text-xs font-medium text-brand bg-brand-subtle px-3 py-1.5 rounded-full mb-8 tracking-wide uppercase">
-          Talentbank Hackathon 2026
+          Path OS
         </div>
 
         <h1 className="font-heading text-5xl md:text-7xl font-bold tracking-tight leading-[1.08] max-w-4xl mb-6">
@@ -134,7 +134,7 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-border px-4 md:px-8 py-6 text-center text-xs text-muted-foreground">
-        Path OS &mdash; Talentbank Tech Hackathon 2026
+        Path OS
       </footer>
     </main>
   );

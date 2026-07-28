@@ -123,7 +123,7 @@ create table salary_data (
   p25             int not null,
   p50             int not null,
   p75             int not null,
-  source          text not null default 'Talentbank 2025',
+  source          text not null default 'Path OS estimate',
   year            int not null default 2025
 );
 
