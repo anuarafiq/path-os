@@ -62,13 +62,20 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 ### Explore (`/explore`)
 - `explore/page.tsx` (server) fetches `candidate_skills`, flattens to `candidateSkillNames: string[]`, passes to `CareerPathExplorer`.
 - Detail panel partitions `career_edges.skill_gaps` into "You already have" (green) vs "You still need" (amber) by case-insensitive match.
-- "Generate Learning Roadmap" hidden if all gaps covered. Roadmap state resets on `selectedNode?.id` change via `useEffect`.
+- "Generate Learning Roadmap" hidden if all gaps covered. Roadmap state (`roadmap`/`roadmapLoading`/`roadmapError`) resets on `selectedNode?.id` change via a render-time comparison (`roadmapResetKey` state + `if` check), not a `useEffect` — avoids both an `react-hooks/set-state-in-effect` lint error and a one-frame flash of the previous node's stale roadmap that an effect-based reset (which fires after paint) would show.
 - Returns `{ roadmap: { summary, steps[{ skill, action, resource }], estimatedMonths } }`.
 
 **Path highlighting** (added in personalized-path feature):
 - `findShortestPath(nodes, edges, fromId, toId)` — module-level Dijkstra by `avg_transition_months`. Returns `PathResult | null`. Runs over the full graph (not filtered `visibleNodes`).
 - `targetNodeId` state persisted to `localStorage("career-explore-target")` — survives refresh.
-- Node drag positions captured on drag-end via `handleNodesChange` wrapper, persisted to `localStorage("career-explore-positions")` as `Record<id, {x,y}>`. Restored on mount via `savedPositionsRef`. Data-only updates (isOnPath, isTarget changes) use functional `setRfNodes` that preserves current positions.
+- Node drag positions captured on drag-end via `handleNodesChange` wrapper, persisted to `localStorage("career-explore-positions-v2")` as `Record<id, {x,y}>`. `savedPositionsRef = useRef(readSavedPositions())` reads that storage synchronously as the ref's initial value (fine — this is a `useRef` initializer, not a `.current` read during render/`useMemo`). Data-only updates (isOnPath, isTarget changes) use functional `setRfNodes` that preserves current positions.
+
+**Grid layout** (category lane × level row):
+- `defaultPositions` memo computes each node's grid slot independently of any saved drag override: lane X from `CATEGORY_ORDER` index (categories not in the list sort alphabetically to the end, so a new category never collides at x=0) × `LANE_WIDTH`, row Y from `LEVEL_Y[level]`, and nodes sharing the same `category|level` are centered around the lane's base X (not left-anchored) via `NODE_SPACING`.
+- `categoryNodes` is pure — position is always `defaultPositions[id]`, no ref read (avoids `react-hooks/refs`; a `.current` read inside a `useMemo` callback is unsafe, see gotcha below). Saved drag positions are layered on top separately:
+  - A `useLayoutEffect` (runs once on mount, before paint) applies `savedPositionsRef.current[id]` over the default-seeded `rfNodes`, so there's no flash of the default grid position.
+  - The "sync `categoryNodes` changes" effect (filter/target/path changes) then prefers the already-rendered position, falling back to `savedPositionsRef.current[id]`, falling back to the default — so a node revealed later (e.g. by a filter change) still picks up its saved position.
+- "Reset layout" button clears `savedPositionsRef`/localStorage and applies `defaultPositions` directly to `rfNodes` via `setRfNodes((prev) => ...)` — it does NOT call `setRfNodes(categoryNodes)`, since that memo can be stale relative to a just-cleared ref (see gotcha below).
 - Path edges: brand amber stroke + `animated: true`. Off-path edges: `opacity: 0.25`. Filter buttons disabled (`pointer-events-none opacity-40`) when destination is set.
 - **React Flow custom nodes require `<Handle>` components** — without them, no edges render at all. `CareerNodeCard` has hidden `<Handle type="target" position={Position.Top}>` + `<Handle type="source" position={Position.Bottom}>` (opacity 0, no pointer events).
 - **Edge initialization**: use `useEdgesState(computedEdges)` not `useEdgesState([])` — initializing with empty array means RF renders 0 edges on first paint and the effect that fills them can arrive too late.

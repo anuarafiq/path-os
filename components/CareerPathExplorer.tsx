@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, useEffect, useMemo } from "react";
+import { useCallback, useRef, useState, useEffect, useLayoutEffect, useMemo } from "react";
 import ReactFlow, {
   Node,
   Edge,
@@ -40,14 +40,20 @@ const LEVEL_Y: Record<string, number> = {
   executive: 720,
 };
 
-const CATEGORY_X: Record<string, number> = {
-  Engineering: 0,
-  "AI/ML": 300,
-  Data: 600,
-  Product: 900,
-  Design: 1200,
-  Business: 1500,
-};
+const CATEGORY_ORDER = ["Engineering", "AI/ML", "Data", "Product", "Design", "Business", "Marketing", "Sales"];
+const LANE_WIDTH = 560;
+const NODE_SPACING = 150;
+const POSITIONS_STORAGE_KEY = "career-explore-positions-v2";
+
+function readSavedPositions(): Record<string, { x: number; y: number }> {
+  if (typeof window === "undefined") return {};
+  try {
+    const stored = localStorage.getItem(POSITIONS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
 
 function CareerNodeCard({ data }: { data: CareerNodeCardData }) {
   const { node, isActive, isTarget, isOnPath, isHighlighted } = data;
@@ -112,12 +118,22 @@ export function CareerPathExplorer({
     return localStorage.getItem("career-explore-target") ?? null;
   });
   const [filterCategory, setFilterCategory] = useState<string>("all");
-  const savedPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
+  const savedPositionsRef = useRef<Record<string, { x: number; y: number }>>(readSavedPositions());
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [roadmapLoading, setRoadmapLoading] = useState(false);
   const [roadmapError, setRoadmapError] = useState<string | null>(null);
 
-  const categories = useMemo(() => Array.from(new Set(careerNodes.map((n) => n.category))), [careerNodes]);
+  const categories = useMemo(() => {
+    const present = Array.from(new Set(careerNodes.map((n) => n.category)));
+    return present.sort((a, b) => {
+      const ai = CATEGORY_ORDER.indexOf(a);
+      const bi = CATEGORY_ORDER.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+  }, [careerNodes]);
 
   const currentNode = careerNodes.find(
     (n) => n.title.toLowerCase() === (currentRole?.toLowerCase() ?? "")
@@ -139,17 +155,36 @@ export function CareerPathExplorer({
     return careerNodes.filter((n) => n.category === filterCategory);
   }, [careerNodes, filterCategory, targetNodeId]);
 
+  // Grid position per node — category (lane) x level (row), independent of any saved drag override
+  const defaultPositions = useMemo(() => {
+    const laneIndex: Record<string, number> = {};
+    categories.forEach((cat, i) => {
+      laneIndex[cat] = i;
+    });
+
+    const groupCounts: Record<string, number> = {};
+    for (const node of visibleNodes) {
+      const key = `${node.category}|${node.level}`;
+      groupCounts[key] = (groupCounts[key] ?? 0) + 1;
+    }
+    const groupSeen: Record<string, number> = {};
+    const positions: Record<string, { x: number; y: number }> = {};
+
+    for (const node of visibleNodes) {
+      const key = `${node.category}|${node.level}`;
+      const i = groupSeen[key] ?? 0;
+      groupSeen[key] = i + 1;
+      const count = groupCounts[key];
+      const xOffset = (i - (count - 1) / 2) * NODE_SPACING;
+      const laneBase = (laneIndex[node.category] ?? categories.length) * LANE_WIDTH;
+      positions[node.id] = { x: laneBase + xOffset, y: LEVEL_Y[node.level] ?? 0 };
+    }
+    return positions;
+  }, [visibleNodes, categories]);
+
   // Build RF nodes — apply saved positions so drag layout survives data updates
   const categoryNodes = useMemo(() => {
-    const catMap: Record<string, number> = {};
     return visibleNodes.map((node) => {
-      const cat = node.category;
-      if (!(cat in catMap)) catMap[cat] = 0;
-      const xOffset = catMap[cat] * 160;
-      catMap[cat]++;
-      const catBase = CATEGORY_X[cat] ?? Object.keys(CATEGORY_X).length * 300;
-      const defaultPos = { x: catBase + xOffset, y: LEVEL_Y[node.level] ?? 0 };
-
       const isActive = node.id === currentNode?.id;
       const isTarget = node.id === targetNodeId;
       const isOnPath = !isActive && !isTarget && pathNodeIdSet.has(node.id);
@@ -157,7 +192,7 @@ export function CareerPathExplorer({
       return {
         id: node.id,
         type: "careerNode",
-        position: savedPositionsRef.current[node.id] ?? defaultPos,
+        position: defaultPositions[node.id] ?? { x: 0, y: 0 },
         data: {
           node,
           isActive,
@@ -167,7 +202,7 @@ export function CareerPathExplorer({
         } satisfies CareerNodeCardData,
       } as Node;
     });
-  }, [visibleNodes, currentNode, targetNodeId, pathNodeIdSet]);
+  }, [visibleNodes, currentNode, targetNodeId, pathNodeIdSet, defaultPositions]);
 
   const categoryEdges = useMemo<Edge[]>(() => {
     const visibleIds = new Set(visibleNodes.map((n) => n.id));
@@ -194,13 +229,17 @@ export function CareerPathExplorer({
   const [rfNodes, setRfNodes, onNodesChange] = useNodesState(categoryNodes);
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState(categoryEdges);
 
-  // Restore saved positions from localStorage on first mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("career-explore-positions");
-      if (stored) savedPositionsRef.current = JSON.parse(stored);
-    } catch { /* ignore */ }
-  }, []);
+  // Apply any saved drag positions over the default grid before first paint (layout
+  // effect, not a regular effect, so there's no flash of the default position). Reading
+  // the ref here is fine - refs are only unsafe to read during render/useMemo, not inside
+  // effects. Runs once; later category/filter changes are handled by the sync effect below.
+  useLayoutEffect(() => {
+    setRfNodes((prev) =>
+      prev.map((n) =>
+        savedPositionsRef.current[n.id] ? { ...n, position: savedPositionsRef.current[n.id] } : n
+      )
+    );
+  }, [setRfNodes]);
 
   // Persist targetNodeId to localStorage
   useEffect(() => {
@@ -211,13 +250,15 @@ export function CareerPathExplorer({
     }
   }, [targetNodeId]);
 
-  // Update node data (visual states) without clobbering user-dragged positions
+  // Update node data (visual states) without clobbering user-dragged positions.
+  // Precedence: already-rendered position, then a saved drag position (for a node
+  // appearing for the first time, e.g. revealed by a filter change), then the default grid slot.
   useEffect(() => {
     setRfNodes((prev) => {
       const posMap = new Map(prev.map((n) => [n.id, n.position]));
       return categoryNodes.map((n) => ({
         ...n,
-        position: posMap.get(n.id) ?? n.position,
+        position: posMap.get(n.id) ?? savedPositionsRef.current[n.id] ?? n.position,
       }));
     });
   }, [categoryNodes, setRfNodes]);
@@ -240,7 +281,7 @@ export function CareerPathExplorer({
         savedPositionsRef.current = { ...savedPositionsRef.current, ...updates };
         try {
           localStorage.setItem(
-            "career-explore-positions",
+            POSITIONS_STORAGE_KEY,
             JSON.stringify(savedPositionsRef.current)
           );
         } catch { /* ignore */ }
@@ -263,11 +304,17 @@ export function CareerPathExplorer({
       (currentNode && e.to_node_id === currentNode.id && e.from_node_id === selectedNode?.id)
   );
 
-  useEffect(() => {
+  // Reset transient roadmap-request state during render when the selected node changes -
+  // an effect-based reset fires after paint, so it'd show the previous node's stale roadmap
+  // for one frame first. This is React's documented "adjusting state on a prop change"
+  // pattern: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [roadmapResetKey, setRoadmapResetKey] = useState(selectedNode?.id ?? null);
+  if (roadmapResetKey !== (selectedNode?.id ?? null)) {
+    setRoadmapResetKey(selectedNode?.id ?? null);
     setRoadmap(null);
     setRoadmapLoading(false);
     setRoadmapError(null);
-  }, [selectedNode?.id]);
+  }
 
   const skillNamesLower = new Set(candidateSkillNames.map((s) => s.toLowerCase()));
   const partitionedGaps = selectedEdge?.skill_gaps
@@ -326,6 +373,19 @@ export function CareerPathExplorer({
               {cat === "all" ? "All" : cat}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => {
+              savedPositionsRef.current = {};
+              localStorage.removeItem(POSITIONS_STORAGE_KEY);
+              setRfNodes((prev) =>
+                prev.map((n) => ({ ...n, position: defaultPositions[n.id] ?? n.position }))
+              );
+            }}
+            className="ml-auto shrink-0 text-xs px-2.5 py-1 rounded-md text-muted-foreground hover:text-foreground transition-colors font-medium"
+          >
+            Reset layout
+          </button>
         </div>
 
         {/* Path active chip */}
