@@ -4,6 +4,11 @@ import { streamText, stepCountIs } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/validate";
+import { findShortestPath } from "@/lib/career-path";
+import type { Database } from "@/types/database";
+
+type CareerNode = Database["public"]["Tables"]["career_nodes"]["Row"];
+type CareerEdge = Database["public"]["Tables"]["career_edges"]["Row"];
 
 const Body = z.object({
   messages: z
@@ -91,7 +96,8 @@ Content rules:
 - You can mention salary ranges in MYR when relevant (e.g., "Senior Software Engineers in KL typically earn RM 9,000–15,000/month")
 - Do not repeat the user's profile back to them unless relevant
 
-You are equipped with tools to query open jobs, fetch salary benchmarks, and update the user's profile.
+You are equipped with tools to query open jobs, fetch salary benchmarks, update the user's profile,
+look up career path options toward a target role, and check the status of the user's job applications.
 Always explain when you are running a tool and present the results clearly to the user.
 If you add a skill, confirm it to the user.`;
 
@@ -197,6 +203,91 @@ If you add a skill, confirm it to the user.`;
           }
 
           return { success: true, message: `Successfully added ${skillName} (${level}) to your profile.` };
+        }
+      },
+
+      getCareerPathOptions: {
+        description: "Find possible next career moves from the candidate's current role, or the path toward a specific target role",
+        inputSchema: z.object({
+          targetRole: z.string().optional().describe("The role the candidate wants to move toward, if mentioned"),
+        }),
+        execute: async ({ targetRole }) => {
+          if (!candidate?.job_title) return { error: "No current role set on profile." };
+
+          const [{ data: nodes }, { data: edges }] = await Promise.all([
+            supabase.from("career_nodes").select("*"),
+            supabase.from("career_edges").select("*"),
+          ]);
+          const careerNodes = (nodes ?? []) as unknown as CareerNode[];
+          const careerEdges = (edges ?? []) as unknown as CareerEdge[];
+
+          const currentNode = careerNodes.find(
+            (n) => n.title.toLowerCase() === candidate.job_title!.toLowerCase()
+          );
+          if (!currentNode) return { message: "Current role not found in career graph." };
+
+          if (targetRole) {
+            const targetNode = careerNodes.find((n) => n.title.toLowerCase() === targetRole.toLowerCase());
+            if (!targetNode) return { message: `Target role "${targetRole}" not found in career graph.` };
+
+            const path = findShortestPath(careerNodes, careerEdges, currentNode.id, targetNode.id);
+            if (!path) return { message: `No known path from ${currentNode.title} to ${targetNode.title}.` };
+
+            const pathTitles = path.nodeIds.map((id) => careerNodes.find((n) => n.id === id)?.title ?? id);
+            const skillGaps = Array.from(
+              new Set(path.edgeIds.flatMap((id) => careerEdges.find((e) => e.id === id)?.skill_gaps ?? []))
+            );
+
+            return { path: pathTitles, totalMonths: path.totalMonths, skillGaps };
+          }
+
+          const nextHops = careerEdges
+            .filter((e) => e.from_node_id === currentNode.id)
+            .map((e) => ({
+              role: careerNodes.find((n) => n.id === e.to_node_id)?.title ?? "Unknown",
+              avgTransitionMonths: e.avg_transition_months,
+              skillGaps: e.skill_gaps,
+            }));
+
+          if (nextHops.length === 0) return { message: `No outgoing career paths found from ${currentNode.title}.` };
+          return nextHops;
+        }
+      },
+
+      getApplicationStatus: {
+        description: "Get the candidate's job applications and their current status",
+        inputSchema: z.object({}),
+        execute: async () => {
+          if (!candidateId) return { error: "Candidate profile not found." };
+
+          const { data, error } = await supabase
+            .from("applications")
+            .select(`id, status, applied_at, jobs ( title, location, employment_type, employer_profiles ( company_name ) )`)
+            .eq("candidate_id", candidateId)
+            .order("applied_at", { ascending: false });
+
+          if (error) return { error: "Failed to fetch applications." };
+          if (!data || data.length === 0) return { message: "No applications found." };
+
+          return (
+            data as unknown as {
+              id: string;
+              status: string;
+              applied_at: string;
+              jobs: {
+                title: string;
+                location: string;
+                employment_type: string;
+                employer_profiles: { company_name: string } | null;
+              } | null;
+            }[]
+          ).map((a) => ({
+            jobTitle: a.jobs?.title ?? "Unknown",
+            company: a.jobs?.employer_profiles?.company_name ?? "Unknown",
+            location: a.jobs?.location,
+            status: a.status,
+            appliedAt: a.applied_at,
+          }));
         }
       }
     }

@@ -33,7 +33,7 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 
 | Route | Method | Auth | Key params |
 |---|---|---|---|
-| `/api/ai/coach` | POST | candidate | maxOutputTokens 512, 10-message sliding window |
+| `/api/ai/coach` | POST | candidate | maxOutputTokens 1024, 10-message sliding window, tool-calling loop (`stopWhen: stepCountIs(5)`) with 5 tools: `findMatchingJobs`, `getSalaryBenchmarks`, `addSkillToProfile`, `getCareerPathOptions` (reuses `lib/career-path.ts`'s `findShortestPath`), `getApplicationStatus` |
 | `/api/ai/cover-note` | POST | candidate | maxOutputTokens 512, takes `{ jobId }` |
 | `/api/ai/skill-gap` | POST | candidate | maxOutputTokens 800, takes `{ currentRole, targetRole, missingSkills }` |
 | `/api/ai/job-fit` | POST | candidate | maxOutputTokens 256, returns `{ score: 0-100, summary }` |
