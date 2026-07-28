@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { UserSearch, KanbanSquare, RefreshCw } from "lucide-react";
 
 export default async function EmployerDashboard() {
   const supabase = await createClient();
@@ -31,9 +32,9 @@ export default async function EmployerDashboard() {
   ]);
 
   const actions = [
-    { href: "/employer/search", label: "Find talent", desc: "AI-powered candidate matching", icon: "◒" },
-    { href: "/employer/pipeline", label: "Review pipeline", desc: "Manage applicants by role", icon: "◓" },
-    { href: "/employer/re-engage", label: "Re-engage talent", desc: "Surface past candidates for new roles", icon: "◐" },
+    { href: "/employer/search", label: "Find talent", desc: "AI-powered candidate matching", icon: UserSearch },
+    { href: "/employer/pipeline", label: "Review pipeline", desc: "Manage applicants by role", icon: KanbanSquare },
+    { href: "/employer/re-engage", label: "Re-engage talent", desc: "Surface past candidates for new roles", icon: RefreshCw },
   ];
 
   return (
@@ -63,7 +64,7 @@ export default async function EmployerDashboard() {
       <div className="grid grid-cols-1 gap-3">
         {actions.map((a) => (
           <Link key={a.href} href={a.href} className="flex items-start gap-4 bg-card border border-border rounded-lg p-4 hover:border-brand/40 hover:bg-brand-subtle/30 transition-all group">
-            <span className="text-brand text-xl mt-0.5">{a.icon}</span>
+            <a.icon className="w-5 h-5 text-brand mt-0.5 shrink-0" aria-hidden="true" />
             <div>
               <p className="font-medium text-sm text-foreground group-hover:text-brand transition-colors">{a.label}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{a.desc}</p>

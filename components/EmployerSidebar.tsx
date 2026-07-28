@@ -7,14 +7,22 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  Building2,
+  Briefcase,
+  UserSearch,
+  KanbanSquare,
+  RefreshCw,
+} from "lucide-react";
 
 const navItems = [
-  { href: "/employer/dashboard", label: "Dashboard",       icon: "⊟" },
-  { href: "/employer/profile",   label: "Company Profile", icon: "◓" },
-  { href: "/employer/jobs",      label: "Jobs",            icon: "◑" },
-  { href: "/employer/search",    label: "Find Talent",     icon: "◒" },
-  { href: "/employer/pipeline",  label: "Pipeline",        icon: "◓" },
-  { href: "/employer/re-engage", label: "Re-Engage",       icon: "◐" },
+  { href: "/employer/dashboard", label: "Dashboard",       icon: LayoutDashboard },
+  { href: "/employer/profile",   label: "Company Profile", icon: Building2 },
+  { href: "/employer/jobs",      label: "Jobs",            icon: Briefcase },
+  { href: "/employer/search",    label: "Find Talent",     icon: UserSearch },
+  { href: "/employer/pipeline",  label: "Pipeline",        icon: KanbanSquare },
+  { href: "/employer/re-engage", label: "Re-Engage",       icon: RefreshCw },
 ];
 
 export function EmployerSidebar({
@@ -52,7 +60,7 @@ export function EmployerSidebar({
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               )}
             >
-              <span className="text-base">{item.icon}</span>
+              <item.icon className="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
               {item.label}
             </Link>
           );

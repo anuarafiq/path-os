@@ -8,19 +8,18 @@ export function Logo({ size = 40, className = "" }: { size?: number; className?:
       role="img"
       aria-label="Path OS"
     >
-      <rect width="40" height="40" rx={size >= 64 ? 12 : 8} fill="var(--bg-elevated)" />
-      <text
-        x="20"
-        y="21"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontFamily="var(--font-heading), var(--font-sans), sans-serif"
-        fontWeight="700"
-        fontSize="21"
-        fill="var(--brand)"
-      >
-        P
-      </text>
+      <rect width="40" height="40" rx={size >= 64 ? 12 : 8} fill="var(--muted)" />
+      <path
+        d="M10 28 L18 20 L30 11"
+        stroke="var(--brand)"
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="10" cy="28" r="2.4" fill="var(--brand)" opacity="0.55" />
+      <circle cx="18" cy="20" r="2.4" fill="var(--brand)" opacity="0.8" />
+      <circle cx="30" cy="11" r="3.2" fill="var(--brand)" />
     </svg>
   );
 }

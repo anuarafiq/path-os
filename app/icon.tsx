@@ -14,12 +14,21 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#15191e",
-          color: "#fcb452",
-          fontWeight: 700,
-          fontSize: 22,
         }}
       >
-        P
+        <svg width="24" height="24" viewBox="0 0 40 40">
+          <path
+            d="M10 28 L18 20 L30 11"
+            stroke="#fcb452"
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="10" cy="28" r="3" fill="#fcb452" opacity="0.55" />
+          <circle cx="18" cy="20" r="3" fill="#fcb452" opacity="0.8" />
+          <circle cx="30" cy="11" r="4" fill="#fcb452" />
+        </svg>
       </div>
     ),
     { ...size }

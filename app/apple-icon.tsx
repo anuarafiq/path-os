@@ -14,12 +14,21 @@ export default function AppleIcon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#15191e",
-          color: "#fcb452",
-          fontWeight: 700,
-          fontSize: 110,
         }}
       >
-        P
+        <svg width="130" height="130" viewBox="0 0 40 40">
+          <path
+            d="M10 28 L18 20 L30 11"
+            stroke="#fcb452"
+            strokeWidth="2.4"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="10" cy="28" r="2.6" fill="#fcb452" opacity="0.55" />
+          <circle cx="18" cy="20" r="2.6" fill="#fcb452" opacity="0.8" />
+          <circle cx="30" cy="11" r="3.6" fill="#fcb452" />
+        </svg>
       </div>
     ),
     { ...size }

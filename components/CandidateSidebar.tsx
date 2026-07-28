@@ -7,17 +7,28 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  Route,
+  Bot,
+  DollarSign,
+  FolderKanban,
+  CircleUser,
+  Award,
+  Briefcase,
+  ClipboardList,
+} from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "⊟" },
-  { href: "/explore",   label: "Explore Paths", icon: "◈" },
-  { href: "/coach",     label: "AI Coach", icon: "◉" },
-  { href: "/pay",       label: "Fair Pay", icon: "◐" },
-  { href: "/portfolio",     label: "Portfolio",    icon: "◑" },
-  { href: "/profile/edit", label: "Profile",      icon: "◓" },
-  { href: "/certificates", label: "Certificates", icon: "◎" },
-  { href: "/jobs",          label: "Jobs",         icon: "◒" },
-  { href: "/applications",  label: "My Applications", icon: "◫" },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/explore",   label: "Explore Paths", icon: Route },
+  { href: "/coach",     label: "AI Coach", icon: Bot },
+  { href: "/pay",       label: "Fair Pay", icon: DollarSign },
+  { href: "/portfolio",     label: "Portfolio",    icon: FolderKanban },
+  { href: "/profile/edit", label: "Profile",      icon: CircleUser },
+  { href: "/certificates", label: "Certificates", icon: Award },
+  { href: "/jobs",          label: "Jobs",         icon: Briefcase },
+  { href: "/applications",  label: "My Applications", icon: ClipboardList },
 ];
 
 export function CandidateSidebar({
@@ -55,7 +66,7 @@ export function CandidateSidebar({
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               )}
             >
-              <span className="text-base">{item.icon}</span>
+              <item.icon className="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
               {item.label}
             </Link>
           );
