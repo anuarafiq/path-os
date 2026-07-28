@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { groq, MODEL } from "@/lib/claude/client";
-import { streamText } from "ai";
+import { streamText, stepCountIs } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/validate";
@@ -27,13 +27,15 @@ export async function POST(req: Request) {
   const { messages } = parsed.data;
 
   const { data: profile } = await supabase.from("profiles").select("id").eq("user_id", user.id).single();
+  const profileId = profile?.id ?? "";
+
   const { data: candidate } = await supabase
     .from("candidate_profiles")
-    .select("name, job_title, years_exp, location, seeking, bio")
-    .eq("profile_id", profile?.id ?? "")
+    .select("id, name, job_title, years_exp, location, seeking, bio")
+    .eq("profile_id", profileId)
     .single();
 
-  const candidateId = (await supabase.from("candidate_profiles").select("id").eq("profile_id", profile?.id ?? "").single()).data?.id ?? "";
+  const candidateId = candidate?.id ?? "";
 
   const { data: skills } = await supabase
     .from("candidate_skills")
@@ -57,7 +59,7 @@ export async function POST(req: Request) {
     ?.map((q) => `${q.title} at ${q.institution}${q.grade ? ` (${q.grade})` : ""}`)
     .join("; ");
 
-  const systemPrompt = `You are an expert career coach for Career OS, a career navigation platform for professionals in Asia (primarily Malaysia).
+  const systemPrompt = `You are an expert career coach for Path OS, a career navigation platform for professionals in Asia (primarily Malaysia).
 
 Your user's profile:
 - Name: ${candidate?.name ?? "Unknown"}
@@ -87,7 +89,11 @@ Content rules:
 - For intern seekers: focus on internship hunting strategies, portfolio building, and entry-level transitions
 - For job seekers: focus on career progression, salary negotiation, and skill gaps to target roles
 - You can mention salary ranges in MYR when relevant (e.g., "Senior Software Engineers in KL typically earn RM 9,000–15,000/month")
-- Do not repeat the user's profile back to them unless relevant`;
+- Do not repeat the user's profile back to them unless relevant
+
+You are equipped with tools to query open jobs, fetch salary benchmarks, and update the user's profile.
+Always explain when you are running a tool and present the results clearly to the user.
+If you add a skill, confirm it to the user.`;
 
   const encoder = new TextEncoder();
 
@@ -95,7 +101,105 @@ Content rules:
     model: groq(MODEL),
     system: systemPrompt,
     messages: messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
-    maxOutputTokens: 512,
+    maxOutputTokens: 1024,
+    stopWhen: stepCountIs(5),
+    tools: {
+      findMatchingJobs: {
+        description: "Search open jobs in the system matching location or skills",
+        inputSchema: z.object({
+          skills: z.array(z.string()).optional().describe("Skills to search for"),
+          location: z.string().optional().describe("Location limit (e.g. Kuala Lumpur, Penang)"),
+        }),
+        execute: async ({ skills, location }) => {
+          let query = supabase
+            .from("jobs")
+            .select("id, title, location, salary_min, salary_max, required_skills")
+            .eq("status", "open");
+          
+          if (location) {
+            query = query.ilike("location", `%${location}%`);
+          }
+          
+          const { data: jobs, error } = await query;
+          if (error || !jobs) return { error: "Failed to fetch jobs" };
+
+          if (skills && skills.length > 0) {
+            const lowerSkills = skills.map((s: string) => s.toLowerCase());
+            return jobs.filter((job) =>
+              job.required_skills?.some((reqSkill: string) => lowerSkills.includes(reqSkill.toLowerCase()))
+            );
+          }
+
+          return jobs;
+        }
+      },
+
+      getSalaryBenchmarks: {
+        description: "Fetch salary bands (p25, p50, p75 in MYR) for a given role in Malaysia",
+        inputSchema: z.object({
+          role: z.string().describe("Name of the job role (e.g., Software Engineer, Product Manager)"),
+        }),
+        execute: async ({ role }) => {
+          const { data, error } = await supabase
+            .from("salary_data")
+            .select("role, location, experience_band, p25, p50, p75")
+            .ilike("role", `%${role}%`);
+
+          if (error || !data || data.length === 0) {
+            return { message: `No specific salary benchmark data found for ${role}.` };
+          }
+          return data;
+        }
+      },
+
+      addSkillToProfile: {
+        description: "Add a skill to the logged-in candidate's profile",
+        inputSchema: z.object({
+          skillName: z.string().describe("The name of the skill (e.g., TypeScript, Next.js, React Flow)"),
+          level: z.enum(["beginner", "mid", "senior"]).default("beginner").describe("Experience level for this skill"),
+        }),
+        execute: async ({ skillName, level }) => {
+          if (!candidateId) return { error: "Candidate profile not found." };
+
+          let { data: skill } = await supabase
+            .from("skills")
+            .select("id")
+            .ilike("name", skillName)
+            .maybeSingle();
+
+          if (!skill) {
+            const { data: newSkill, error: createError } = await supabase
+              .from("skills")
+              .insert({ name: skillName, category: "technical" })
+              .select("id")
+              .single();
+            
+            if (createError || !newSkill) {
+              return { error: `Failed to register skill ${skillName}` };
+            }
+            skill = newSkill;
+          }
+
+          const { error: assocError } = await supabase
+            .from("candidate_skills")
+            .insert({
+              candidate_id: candidateId,
+              skill_id: skill.id,
+              level: level,
+              verified: false
+            });
+
+          if (assocError) {
+            if (assocError.code === "23505") {
+              return { message: `Skill ${skillName} is already on your profile.` };
+            }
+            return { error: `Failed to link skill to profile: ${assocError.message}` };
+          }
+
+          return { success: true, message: `Successfully added ${skillName} (${level}) to your profile.` };
+        }
+      }
+    }
   });
 
   const readable = new ReadableStream({
@@ -121,3 +225,4 @@ Content rules:
     },
   });
 }
+

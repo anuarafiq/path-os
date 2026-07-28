@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -87,14 +87,14 @@ export function CandidateSidebar({
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border flex-col h-screen sticky top-0">
         <div className="px-5 py-5 border-b border-border">
-          <Image src="/logo.jpeg" alt="Career OS" width={80} height={80} className="rounded-md" priority />
+          <Logo size={80} className="rounded-md" />
         </div>
         {navContent}
       </aside>
 
       {/* Mobile top bar */}
       <div className="flex md:hidden items-center justify-between px-4 h-12 border-b border-border bg-background fixed top-0 left-0 right-0 z-30">
-        <Image src="/logo.jpeg" alt="Career OS" width={32} height={32} className="rounded-sm" priority />
+        <Logo size={32} className="rounded-sm" />
         <button
           type="button"
           aria-label="Open navigation"
@@ -127,7 +127,7 @@ export function CandidateSidebar({
         )}
       >
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <Image src="/logo.jpeg" alt="Career OS" width={40} height={40} className="rounded-sm" />
+          <Logo size={40} className="rounded-sm" />
           <button
             type="button"
             aria-label="Close navigation"

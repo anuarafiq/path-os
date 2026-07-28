@@ -29,11 +29,11 @@ async function fetchPortfolio(candidateId: string): Promise<PortfolioData | null
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { candidateId } = await params;
   const data = await fetchPortfolio(candidateId);
-  if (!data) return { title: "Portfolio — Career OS" };
+  if (!data) return { title: "Portfolio — Path OS" };
   const { name, bio } = data.candidate;
   return {
-    title: `${name} — Career OS Portfolio`,
-    description: bio ?? `View ${name}'s professional portfolio on Career OS.`,
+    title: `${name} — Path OS Portfolio`,
+    description: bio ?? `View ${name}'s professional portfolio on Path OS.`,
   };
 }
 
@@ -63,7 +63,7 @@ export default async function PublicPortfolioPage({ params }: Props) {
       <header className="border-b" style={{ borderColor: "var(--border-subtle)" }}>
         <div className="max-w-3xl mx-auto px-4 md:px-8 py-4">
           <a href="/" className="font-heading font-bold text-sm" style={{ color: "var(--accent)" }}>
-            Career OS
+            Path OS
           </a>
         </div>
       </header>
@@ -308,7 +308,7 @@ export default async function PublicPortfolioPage({ params }: Props) {
         <div className="max-w-3xl mx-auto px-4 md:px-8 flex items-center justify-between">
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             Powered by{" "}
-            <a href="/" className="hover:opacity-80" style={{ color: "var(--accent)" }}>Career OS</a>
+            <a href="/" className="hover:opacity-80" style={{ color: "var(--accent)" }}>Path OS</a>
           </p>
           <a href="/signup" className="text-xs hover:opacity-80" style={{ color: "var(--accent)" }}>
             Build your profile →

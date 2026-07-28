@@ -1,4 +1,4 @@
-# Career OS — Architecture & Feature Notes
+# Path OS — Architecture & Feature Notes
 
 Implementation details grouped by domain. Read this when working on a specific area to understand decisions already made.
 
@@ -9,6 +9,13 @@ Implementation details grouped by domain. Read this when working on a specific a
 - Signup redirect: employers → `/employer/dashboard`, candidates → `/onboarding` — prevents employers landing on candidate onboarding. `app/(auth)/signup/page.tsx`
 - `useSearchParams()` in signup page wrapped in Suspense boundary — Next.js 16 requirement
 - Resume auto-fill at `/onboarding` — pre-screen (`showImport` state, default `true`) renders before the wizard. Candidate pastes CV text; `POST /api/resumes/parse` calls Groq (`generateText`, maxOutputTokens 2048) returns structured JSON. Client merges into all wizard state vars; skills matched case-insensitively against `allSkills` pre-selected at "mid" level. "Skip, fill manually" bypasses. Input capped at 20,000 chars. Double-parse fallback with regex `/\{[\s\S]*\}/`.
+
+---
+
+## Branding
+
+- `components/Logo.tsx` — inline SVG lettermark ("P" in Bricolage Grotesque on `--bg-elevated`/`--brand`), replaces the old `/public/logo.jpeg` raster. Sized via `size` prop (all call sites use square dimensions: 32/40/64/80), `className` passthrough for `rounded-sm`/`rounded-md`.
+- `app/icon.tsx` / `app/apple-icon.tsx` — Next.js file-convention icons rendered via `next/og`'s `ImageResponse` (Satori). Satori does not support CSS custom properties or `oklch()` — colors there are hardcoded hex (`#15191e` / `#fcb452`, converted from the `--bg-elevated`/`--brand` tokens) rather than `var(--brand)`, which works fine in `components/Logo.tsx` since that renders through the real browser/React DOM instead.
 
 ---
 
@@ -68,6 +75,7 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 ### Certificates (`/certificates`)
 - Migration `004_credential_url.sql` adds `credential_url text` to `qualifications`.
 - Portfolio page splits Education and Certificates into separate sections. Certs with `credential_url` show Coursera badge + Verify link + Recent badge (earned within 90 days).
+- Portfolio page (`app/(candidate)/portfolio/page.tsx`) fetches `portfolio_items` and now renders them in a Projects section (previously fetched but never rendered — the public `/p/[candidateId]` page had its own Projects section, the private one didn't). No shared component between the two pages: each section (Education/Certs/Work/Skills/Projects) is independently reimplemented per page with that page's own styling convention (Tailwind classes on the private page, inline `style={{ color: "var(--...)" }}` on the public page) — match that pattern rather than extracting shared section components.
 - After adding a cert, shows which career roles the suggested skills move the candidate toward (uses `career_edges.skill_gaps`).
 
 ### Profile Edit (`/profile/edit`)
@@ -76,8 +84,8 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 ### Public Portfolio (`/p/[candidateId]`)
 - `app/p/[candidateId]/page.tsx` — public server component, no auth gate. Uses the **anon server client** (`@/lib/supabase/server` `createClient()`) and calls the `get_public_portfolio(p_id)` RPC (security hardening, migration 005), **not** the service-role admin client and **not** direct table selects. The RPC returns one candidate's full portfolio as JSON only when `is_public = true`; private/missing → `null` → `notFound()`. `fetchPortfolio()` helper wraps the rpc call; both `generateMetadata` and the page use it.
 - **Visibility model (migration 005):** `candidate_profiles.is_public boolean default true`. `get_public_portfolio(p_id)` is `SECURITY DEFINER` (bypasses RLS internally but gates on `is_public`) and granted `execute` to `anon`/`authenticated` — **no** `grant select` to anon on the tables, so the public PostgREST endpoint stays closed and the data can't be bulk-scraped via the anon key. Sub-tables (`qualifications`, `work_experiences`, `portfolio_items`, `candidate_skills`) keep owner-only RLS; non-owners reach them only through the RPC, one id at a time (UUID-gated). The old `"candidate_profiles: employer read" using (true)` policy is replaced by `"public read" using (is_public = true)` (authenticated employer search now hides opted-out candidates). Consequence: a candidate who opts out is invisible even to employers they applied to — add an applications-scoped policy if that's needed later.
-- Renders: header, bio, Education, Certificates, Work Experience, Skills, Projects (portfolio_items) sections. Standalone layout — no sidebar, no nav rail. Minimal header with "Career OS" wordmark + footer "Powered by Career OS / Build your profile →".
-- `generateMetadata` sets `<title>` to `"${name} — Career OS Portfolio"`.
+- Renders: header, bio, Education, Certificates, Work Experience, Skills, Projects (portfolio_items) sections. Standalone layout — no sidebar, no nav rail. Minimal header with "Path OS" wordmark + footer "Powered by Path OS / Build your profile →".
+- `generateMetadata` sets `<title>` to `"${name} — Path OS Portfolio"`.
 - `components/ShareButton.tsx` — client component on the private `/portfolio` page. Copies `/p/{candidateId}` URL to clipboard; shows "Copied!" for 2s.
 - `/p/` is not in `proxy.ts` protectedPaths — no middleware change needed. `proxy.ts` rate-limits `/p/` (60/min/IP) and `/api/demo` (5/min/IP) via `lib/rate-limit.ts` (in-memory, per-instance).
 

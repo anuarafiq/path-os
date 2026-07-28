@@ -29,7 +29,7 @@ export default function ReEngagePage() {
   }
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl">
+    <div className="px-4 py-6 md:px-8 md:py-8">
       <h1 className="font-heading text-3xl font-bold mb-1">Talent Re-Engagement</h1>
       <p className="text-muted-foreground text-sm mb-8">
         Surface past applicants and alumni who are now a strong fit for your open roles.

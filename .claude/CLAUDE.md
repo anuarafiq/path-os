@@ -1,4 +1,4 @@
-# Career OS — Project Instructions
+# Path OS — Project Instructions
 
 ## Stack
 Next.js 16.2.7 (App Router, Turbopack) + Supabase + Groq API (llama-3.3-70b-versatile via @ai-sdk/groq) + Tailwind CSS v4 + shadcn/ui + React Flow
@@ -59,4 +59,5 @@ Line heights: tight 1.2 (headings), body 1.6 (dark bg add 0.05), ui 1.4.
 - **Mobile nav state lives in the sidebar component** — layouts are server components, so the hamburger open/close `useState` is in `CandidateSidebar` / `EmployerSidebar` directly. Do NOT add a client wrapper around the layout. Both sidebars render a desktop `<aside className="hidden md:flex">` and a mobile top bar + drawer from the same component. Layouts have a `<div className="h-12 md:hidden">` spacer at the top of `<main>` to compensate for the fixed mobile top bar.
 - **Full-viewport components use `h-[100dvh]` not `h-screen`** — `CoachChat` and `CareerPathExplorer` use `h-[100dvh]` (dynamic viewport height). `100vh` doesn't adjust when the mobile browser toolbar hides or the keyboard opens; `100dvh` does.
 - **Mobile responsive patterns** — page-level content wrappers use `px-4 md:px-8` (not bare `px-8`). Multi-column data grids use `grid-cols-1 sm:grid-cols-3` (not bare `grid-cols-3`). Paired form fields use `grid-cols-1 sm:grid-cols-2`. `CareerPathExplorer` detail panel uses a CSS-only responsive approach: `fixed` bottom sheet on mobile (`md:hidden` equivalent via `md:static`), side panel on desktop.
+- **`next/og` `ImageResponse` (favicon/OG images) can't use `oklch()` or `var(--token)`** — Satori (the renderer behind `app/icon.tsx`/`app/apple-icon.tsx`) doesn't resolve CSS custom properties or reliably parse `oklch()`. Hardcode hex equivalents there instead; the real design tokens still work everywhere rendered by the browser (e.g. `components/Logo.tsx`).
 - **`col-span-2` in responsive grids** — when a grid changes from `grid-cols-2` to `grid-cols-1 sm:grid-cols-2`, any `col-span-2` children must become `col-span-1 sm:col-span-2` or they break the single-column layout on mobile.

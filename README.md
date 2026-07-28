@@ -1,4 +1,4 @@
-# Career OS
+# Path OS
 
 A two-sided career platform that matches candidates to opportunities and helps employers build talent pipelines. Built for the Talentbank Hackathon 2026.
 
@@ -44,7 +44,7 @@ A two-sided career platform that matches candidates to opportunities and helps e
 1. Clone and install:
 ```bash
 git clone <repo>
-cd career-os
+cd path-os
 npm install
 ```
 

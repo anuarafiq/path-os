@@ -1,5 +1,5 @@
 {
-  "name": "career-os",
+  "name": "path-os",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "seed:demo": "node --env-file=.env.local scripts/seed-demo.mts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.80",

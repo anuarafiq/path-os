@@ -32,7 +32,7 @@ export default async function PortfolioPage() {
   }, {});
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -201,6 +201,49 @@ export default async function PortfolioPage() {
                     </span>
                   ))}
                 </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Projects */}
+      {(portfolio ?? []).length > 0 && (
+        <section className="mb-8">
+          <h2 className="font-heading font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-4">
+            Projects
+          </h2>
+          <div className="flex flex-col gap-3">
+            {portfolio!.map((item) => (
+              <div key={item.id} className="py-3 border-b border-border">
+                <div className="flex items-start justify-between mb-1">
+                  <p className="font-medium text-sm text-foreground">{item.title}</p>
+                  {item.url && (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-brand hover:opacity-80 shrink-0 ml-4"
+                    >
+                      View ↗
+                    </a>
+                  )}
+                </div>
+                {item.description && (
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">{item.description}</p>
+                )}
+                {(item.tags ?? []).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {(item.tags as string[]).map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs bg-secondary border border-border px-2 py-0.5 rounded text-muted-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

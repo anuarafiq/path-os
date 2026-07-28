@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import DemoLogin from "@/components/DemoLogin";
 
 export default function Home() {
@@ -7,7 +7,7 @@ export default function Home() {
     <main className="min-h-screen bg-background flex flex-col">
       {/* Nav */}
       <nav className="flex items-center justify-between px-4 md:px-8 py-5 border-b border-border">
-        <Image src="/logo.jpeg" alt="Career OS" width={40} height={40} className="rounded-sm" priority />
+        <Logo size={40} className="rounded-sm" />
         <div className="flex items-center gap-4">
           <Link
             href="/login"
@@ -134,7 +134,7 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-border px-4 md:px-8 py-6 text-center text-xs text-muted-foreground">
-        Career OS &mdash; Talentbank Tech Hackathon 2026
+        Path OS &mdash; Talentbank Tech Hackathon 2026
       </footer>
     </main>
   );

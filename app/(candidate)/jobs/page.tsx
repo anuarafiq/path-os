@@ -40,7 +40,7 @@ export default async function JobsPage() {
   const allSkills = [...new Set(allJobs.flatMap((j) => j.required_skills ?? []))].sort();
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl">
+    <div className="px-4 py-6 md:px-8 md:py-8">
       <h1 className="font-heading text-3xl font-bold mb-1">Job Board</h1>
       <p className="text-muted-foreground text-sm mb-6">Open opportunities matched to your profile.</p>
 

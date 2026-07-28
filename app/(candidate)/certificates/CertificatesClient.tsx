@@ -181,7 +181,7 @@ export function CertificatesClient({ certs: initialCerts, candidateId, existingS
   }
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 max-w-2xl">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-2xl mx-auto">
       <h1 className="font-heading text-2xl font-bold mb-1">Certificates</h1>
       <p className="text-muted-foreground text-sm mb-8">
         Add Coursera certificates. They appear on your portfolio with a verification link, and we&apos;ll suggest related skills to add to your profile.
