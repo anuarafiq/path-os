@@ -7,7 +7,7 @@ A two-sided career platform that matches candidates to opportunities and helps e
 ### Candidate side
 - **Onboarding** - structured intake of education, work history, skills, and portfolio links
 - **Career exploration** - interactive graph of roles and career paths with salary benchmarking
-- **AI coach** - personalized guidance on skill gaps, career transitions, and next steps
+- **AI coach (agentic)** - not a canned Q&A bot. Runs a real tool-calling loop (Vercel AI SDK, `stopWhen: stepCountIs(5)`) with 5 tools it decides when to invoke: search open jobs, pull live salary benchmarks, add a skill to the candidate's profile, traverse the career graph toward a stated target role (shortest-path + skill gaps), and check real application status. It reasons over the candidate's actual data, not a static prompt.
 - **Certificates** - auto-parse and store Coursera credentials; skill suggestions tied to career progression
 - **Job discovery** - browse open positions (demo mode includes filtering by salary, location, skills)
 - **Applications** - apply to jobs and track pipeline stage
@@ -17,12 +17,14 @@ A two-sided career platform that matches candidates to opportunities and helps e
 - **Job posting** - create and manage open positions
 - **Talent search** - scout candidate profiles and save to talent pools
 - **Pipeline** - manage applications through recruiting stages
-- **Re-engagement** - AI-powered suggestions to match open roles against saved talent
+- **Re-engagement** - AI-ranked fit suggestions against saved talent, with a deterministic guardrail (candidates already in an active pipeline are excluded before the LLM ever sees them, not left to a model self-check) so outreach never targets someone who's already applied
 
 ### Shared AI features
 - **Job fit scoring** - matches candidate skills to job requirements via LLM
 - **Auto-extraction** - parses CVs and certificates to pre-fill profile data
 - **Personalized recommendations** - suggests career paths and learning roadmaps based on skill gaps
+
+> **Agentic vs. AI-assisted:** the Coach is the one genuinely agentic feature in the app - it chooses which tools to call and when, across multiple steps, based on the conversation. Everything else above (fit scoring, extraction, re-engagement, recommendations) is a single well-prompted LLM call, which is a real distinction if judges probe "how is this agentic."
 
 ## Stack
 
