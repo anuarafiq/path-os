@@ -15,13 +15,18 @@ export default function ReEngagePage() {
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<ReEngageSuggestion[]>([]);
   const [ran, setRan] = useState(false);
+  const [error, setError] = useState(false);
 
   async function runReEngage() {
     setLoading(true);
+    setError(false);
     try {
       const res = await fetch("/api/ai/re-engage", { method: "POST" });
       const data = await res.json();
       setSuggestions(data.suggestions ?? []);
+    } catch {
+      setError(true);
+      setSuggestions([]);
     } finally {
       setRan(true);
       setLoading(false);
@@ -49,7 +54,9 @@ export default function ReEngagePage() {
       {ran && suggestions.length === 0 && (
         <div className="bg-card border border-border rounded-lg p-6 text-center">
           <p className="text-muted-foreground text-sm">
-            No re-engagement suggestions right now. Add more candidates to your talent pool first.
+            {error
+              ? "Something went wrong running the scan. Please try again."
+              : "No re-engagement suggestions right now. Add more candidates to your talent pool first."}
           </p>
         </div>
       )}

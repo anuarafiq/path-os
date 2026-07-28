@@ -38,7 +38,7 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 | `/api/ai/skill-gap` | POST | candidate | maxOutputTokens 800, takes `{ currentRole, targetRole, missingSkills }` |
 | `/api/ai/job-fit` | POST | candidate | maxOutputTokens 256, returns `{ score: 0-100, summary }` |
 | `/api/ai/jd-writer` | POST | employer | maxOutputTokens 800, takes `{ title, location, employmentType, skills, roughNotes }` |
-| `/api/ai/re-engage` | POST | employer | returns up to 5 `ReEngageSuggestion[]` |
+| `/api/ai/re-engage` | POST | employer | deterministically excludes candidates who've already applied to any of the employer's open jobs (queried before prompting, not left to the model - see Gotchas) before asking the LLM to rank fits; text+regex-parsed JSON output; wrapped in try/catch, returns `{ suggestions: [] }` on any generation failure; returns up to 5 `ReEngageSuggestion[]` |
 | `/api/certificates/coursera` | POST | — | server-side fetch + OG tag parse, SSRF-guarded |
 | `/api/certificates/skills-suggest` | POST | — | Groq, up to 6 skills |
 | `/api/resumes/parse` | POST | candidate | Groq, maxOutputTokens 2048 |
