@@ -23,6 +23,7 @@ type Candidate = {
   job_title: string | null;
   years_exp: number | null;
   resume_url: string | null;
+  is_public: boolean;
 };
 
 export function ProfileEditForm({ candidate, userId }: { candidate: Candidate; userId: string }) {
@@ -37,6 +38,7 @@ export function ProfileEditForm({ candidate, userId }: { candidate: Candidate; u
   const [jobTitle, setJobTitle] = useState(candidate.job_title ?? "");
   const [yearsExp, setYearsExp] = useState(candidate.years_exp?.toString() ?? "");
   const [resumeUrl, setResumeUrl] = useState(candidate.resume_url ?? null);
+  const [isPublic, setIsPublic] = useState(candidate.is_public);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export function ProfileEditForm({ candidate, userId }: { candidate: Candidate; u
         job_title: jobTitle.trim() || null,
         years_exp: yearsExp ? parseInt(yearsExp) : null,
         resume_url: resumeUrl,
+        is_public: isPublic,
       })
       .eq("id", candidate.id);
 
@@ -182,6 +185,22 @@ export function ProfileEditForm({ candidate, userId }: { candidate: Candidate; u
           </div>
         </div>
       )}
+
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
+        <div>
+          <Label htmlFor="isPublic">Public portfolio</Label>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            When on, your portfolio is visible at your public link and to employers browsing search.
+          </p>
+        </div>
+        <input
+          id="isPublic"
+          type="checkbox"
+          checked={isPublic}
+          onChange={(e) => setIsPublic(e.target.checked)}
+          className="accent-brand w-4 h-4 cursor-pointer shrink-0"
+        />
+      </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
