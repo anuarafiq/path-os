@@ -16,6 +16,7 @@ import ReactFlow, {
   type NodeChange,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { findShortestPath } from "@/lib/career-path";
@@ -44,6 +45,34 @@ const CATEGORY_ORDER = ["Engineering", "AI/ML", "Data", "Product", "Design", "Bu
 const LANE_WIDTH = 560;
 const NODE_SPACING = 150;
 const POSITIONS_STORAGE_KEY = "career-explore-positions-v2";
+
+// Keep in sync with light/dark tokens in app/globals.css
+const FLOW_COLORS = {
+  dark: {
+    edgeActive: "oklch(0.82 0.14 72)",
+    edgeDefault: "oklch(0.35 0.016 258)",
+    canvasBg: "oklch(0.13 0.012 258)",
+    dotBg: "oklch(0.26 0.014 258)",
+    miniMapActive: "oklch(0.82 0.14 72)",
+    miniMapTarget: "oklch(0.72 0.14 72)",
+    miniMapOnPath: "oklch(0.60 0.10 72)",
+    miniMapDefault: "oklch(0.26 0.014 258)",
+    miniMapBg: "oklch(0.17 0.012 258)",
+    miniMapBorder: "oklch(0.26 0.014 258)",
+  },
+  light: {
+    edgeActive: "oklch(0.45 0.13 72)",
+    edgeDefault: "oklch(0.74 0.014 258)",
+    canvasBg: "oklch(0.87 0.012 258)",
+    dotBg: "oklch(0.74 0.014 258)",
+    miniMapActive: "oklch(0.45 0.13 72)",
+    miniMapTarget: "oklch(0.52 0.13 72)",
+    miniMapOnPath: "oklch(0.58 0.10 72)",
+    miniMapDefault: "oklch(0.74 0.014 258)",
+    miniMapBg: "oklch(0.83 0.012 258)",
+    miniMapBorder: "oklch(0.74 0.014 258)",
+  },
+} as const;
 
 function readSavedPositions(): Record<string, { x: number; y: number }> {
   if (typeof window === "undefined") return {};
@@ -122,6 +151,11 @@ export function CareerPathExplorer({
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [roadmapLoading, setRoadmapLoading] = useState(false);
   const [roadmapError, setRoadmapError] = useState<string | null>(null);
+
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const flowColors = mounted && resolvedTheme === "light" ? FLOW_COLORS.light : FLOW_COLORS.dark;
 
   const categories = useMemo(() => {
     const present = Array.from(new Set(careerNodes.map((n) => n.category)));
@@ -218,13 +252,13 @@ export function CareerPathExplorer({
           markerEnd: { type: MarkerType.ArrowClosed },
           animated: onPath,
           style: onPath
-            ? { stroke: "oklch(0.82 0.14 72)", strokeWidth: 2 }
+            ? { stroke: flowColors.edgeActive, strokeWidth: 2 }
             : pathIsActive
-            ? { stroke: "oklch(0.35 0.016 258)", strokeWidth: 1, opacity: 0.25 }
-            : { stroke: "oklch(0.35 0.016 258)", strokeWidth: 1 },
+            ? { stroke: flowColors.edgeDefault, strokeWidth: 1, opacity: 0.25 }
+            : { stroke: flowColors.edgeDefault, strokeWidth: 1 },
         } as Edge;
       });
-  }, [careerEdges, visibleNodes, pathEdgeIdSet]);
+  }, [careerEdges, visibleNodes, pathEdgeIdSet, flowColors]);
 
   const [rfNodes, setRfNodes, onNodesChange] = useNodesState(categoryNodes);
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState(categoryEdges);
@@ -420,19 +454,19 @@ export function CareerPathExplorer({
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.3}
           maxZoom={1.5}
-          style={{ background: "oklch(0.13 0.012 258)" }}
+          style={{ background: flowColors.canvasBg }}
         >
-          <Background color="oklch(0.26 0.014 258)" gap={24} />
+          <Background color={flowColors.dotBg} gap={24} />
           <Controls />
           <MiniMap
             nodeColor={(n) => {
               const d = n.data as CareerNodeCardData;
-              if (d.isActive) return "oklch(0.82 0.14 72)";
-              if (d.isTarget) return "oklch(0.72 0.14 72)";
-              if (d.isOnPath) return "oklch(0.60 0.10 72)";
-              return "oklch(0.26 0.014 258)";
+              if (d.isActive) return flowColors.miniMapActive;
+              if (d.isTarget) return flowColors.miniMapTarget;
+              if (d.isOnPath) return flowColors.miniMapOnPath;
+              return flowColors.miniMapDefault;
             }}
-            style={{ background: "oklch(0.17 0.012 258)", border: "1px solid oklch(0.26 0.014 258)" }}
+            style={{ background: flowColors.miniMapBg, border: `1px solid ${flowColors.miniMapBorder}` }}
           />
         </ReactFlow>
       </div>

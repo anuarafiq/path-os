@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Bricolage_Grotesque } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,11 +36,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${bricolage.variable} dark`}
+      className={`${geistSans.variable} ${bricolage.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-background text-foreground antialiased">
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

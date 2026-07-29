@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -83,12 +84,15 @@ export function CandidateSidebar({
             <p className="text-xs text-muted-foreground truncate">{email}</p>
           </div>
         </div>
-        <button
-          onClick={handleSignOut}
-          className="w-full text-left text-xs text-muted-foreground hover:text-foreground px-3 py-2 transition-colors"
-        >
-          Sign out
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleSignOut}
+            className="text-left text-xs text-muted-foreground hover:text-foreground px-3 py-2 transition-colors"
+          >
+            Sign out
+          </button>
+          <ThemeToggle />
+        </div>
       </div>
     </>
   );

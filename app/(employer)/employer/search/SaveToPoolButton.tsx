@@ -50,7 +50,7 @@ export default function SaveToPoolButton({ candidateId, employerId, initialInPoo
       <button
         onClick={handleSave}
         disabled={loading}
-        className="text-xs px-3 py-1.5 rounded-md bg-[var(--brand-subtle)] border border-[var(--brand-dim)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-[oklch(0.13_0.012_258)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="text-xs px-3 py-1.5 rounded-md bg-[var(--brand-subtle)] border border-[var(--brand-dim)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-primary-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Saving…" : "Save to pool"}
       </button>

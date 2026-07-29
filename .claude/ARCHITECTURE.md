@@ -21,6 +21,19 @@ Implementation details grouped by domain. Read this when working on a specific a
 
 ---
 
+## Theming
+
+- Light/dark toggle via `next-themes` (was already a dependency, unwired until this feature). `components/theme-provider.tsx` wraps `NextThemesProvider` with `attribute="class"` (next-themes defaults to `data-theme`, but `globals.css` already has `@custom-variant dark (&:is(.dark *))` wired for the class-based variant), `defaultTheme="dark"`, `enableSystem={false}` (no OS-preference branch, explicit toggle only), `disableTransitionOnChange` (the app uses `transition-colors`/`transition-all` heavily; without this a theme swap animates every element as a visible wave). Mounted in `app/layout.tsx` inside `<body>`; the `<html>` element no longer hardcodes a `dark` class — next-themes owns it, injecting a pre-hydration script so new visitors never flash the light base before dark applies.
+- Token architecture in `app/globals.css`: bare `:root` now holds **light** values (the base/fallback state), an explicit `.dark { }` block holds the original dark values. Cascade makes `.dark` win when the class is present; no `.light {}` block needed since next-themes with `attribute="class"` just adds/removes literal `dark`/`light` classes. `@theme inline` is theme-agnostic, unchanged.
+- **Light-mode brand/semantic tokens are darkened, not lightness-flipped** — see the CLAUDE.md gotcha for why (saturated hues, especially amber, don't track WCAG contrast the same way neutrals do under a naive OKLCH lightness flip). `--primary`/`--brand`/`--ring` = `oklch(0.45 0.13 72)` in light mode vs `oklch(0.82 0.14 72)` in dark — opposite direction from the neutral ramp. `--primary-foreground` is asymmetric between themes for the same reason (dark text in dark mode, pale text in light mode, since the button fill itself flips from light to dark).
+- Non-token dark-specific CSS (scrollbar thumb colors, the `input[type="month"]`/`type="date"` calendar picker icon filter) moved from unconditioned rules to `.dark`-scoped overrides on top of new light-mode defaults, same `@layer base` block in `globals.css`.
+- `components/ThemeToggle.tsx` — icon-only (`lucide-react` `Sun`/`Moon`, mount-guarded against `useTheme()`'s SSR/hydration timing) button in the sidebar footer, sharing a flex row with "Sign out" rather than a second stacked full-width text row (`CandidateSidebar.tsx`, `EmployerSidebar.tsx` — both render the same shared `navContent` block for desktop `<aside>` and the mobile drawer, so one insertion covers both).
+- `CareerPathExplorer.tsx`'s React Flow canvas (edges, `<Background>`, `<MiniMap>`) doesn't reliably consume `var(--token)` in its color props (`nodeColor` is a JS callback needing a resolved literal) — themed via a colocated `FLOW_COLORS.{dark,light}` map + `useTheme()`, not CSS variables. See CLAUDE.md gotcha.
+- Two arbitrary-value Tailwind spots (`hover:text-[oklch(...)]` in `ApplyButton.tsx`, `SaveToPoolButton.tsx`) that bypassed the token system were swapped to `hover:text-primary-foreground` (the semantically correct pairing for a `hover:bg-[var(--brand)]` fill in either theme).
+- Out of scope / not touched: the undefined-CSS-variable bug (`--bg-base`, `--text-primary`, etc. — see Branding section above) affects the same files regardless of theme and predates this feature.
+
+---
+
 ## Database & Supabase
 
 - Admin client at `lib/supabase/admin.ts` — uses service role key, bypasses RLS, server-only
