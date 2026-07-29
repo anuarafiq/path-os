@@ -1,7 +1,5 @@
 # Path OS - TODO
 
-> Intent Form **15 Jun** · Stage 2 build **26 Jul**
-
 ## Blockers (nothing renders without these)
 
 - [x] **Supabase project** - create project, run both migrations, add `.env.local` (URL + anon key). App pages can't render until this exists.
@@ -41,9 +39,9 @@
 ## Polish + completeness
 
 - [x] **Certificates page** - `/certificates` self-service UI: paste Coursera URL → auto-extract details → save → AI skill suggestions → career path tie-in. Portfolio splits Education and Certificates sections with Coursera badge and Recent indicator.
-- [x] **Profile editing (basic info)** - `app/(candidate)/profile/edit/` — edit name, location, bio, GitHub/LinkedIn, seeking type, job title, years exp. "Profile" nav item added to `CandidateSidebar`. Employer equivalent at `app/(employer)/employer/profile/` — edit company name, industry, size, website. "Company Profile" nav item added to `EmployerSidebar`. Both do `UPDATE`, not insert. Skills/qualifications/work experience editing still pending below.
-- [ ] **Profile editing (skills, quals, work exp)** - edit/delete flows for `candidate_skills`, `qualifications`, `work_experiences` post-onboarding. Still read-only in portfolio view.
-- [ ] **Portfolio item CRUD** - add/edit/delete `portfolio_items`. Page renders them but nothing populates them. [Portfolio items seeded in demo but no create/edit UI]
+- [x] **Profile editing (basic info)** - `app/(candidate)/profile/edit/` — edit name, location, bio, GitHub/LinkedIn, seeking type, job title, years exp. "Profile" nav item added to `CandidateSidebar`. Employer equivalent at `app/(employer)/employer/profile/` — edit company name, industry, size, website. "Company Profile" nav item added to `EmployerSidebar`. Both do `UPDATE`, not insert.
+- [x] **Profile editing (skills, quals, work exp)** - `EducationEditor`, `WorkExperienceEditor`, `SkillsEditor` in `app/(candidate)/profile/edit/` give edit/delete flows for `candidate_skills`, `qualifications`, `work_experiences` post-onboarding.
+- [x] **Portfolio item CRUD** - `PortfolioItemsEditor` in `app/(candidate)/profile/edit/` adds/deletes `portfolio_items`.
 - [ ] **Coach session persistence** - read/write `coach_sessions` so conversations survive reloads. Table exists, route never touches it. [Coach component stores messages in-memory only, no DB persistence]
 - [ ] **Profile completeness nudge** - if candidate profile is sparse (no skills, no bio), coach should prompt the user to fill their profile instead of giving hollow generic advice.
 - [ ] **Contextual follow-up suggestions** - after each coach response, render 2-3 smart follow-up chips based on the current topic. High demo value.

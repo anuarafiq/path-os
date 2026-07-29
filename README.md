@@ -5,15 +5,17 @@ A two-sided career platform that matches candidates to opportunities and helps e
 ## Features
 
 ### Candidate side
-- **Onboarding** - structured intake of education, work history, skills, and portfolio links
+- **Onboarding** - structured intake of education, work history, skills, and portfolio links; resume upload with AI-parsed auto-fill (paste or upload a CV, Groq extracts structured fields)
+- **Profile editing** - dedicated editors for basic info, education, work experience, skills, and portfolio items post-onboarding
 - **Career exploration** - interactive graph of roles and career paths with salary benchmarking
-- **AI coach (agentic)** - not a canned Q&A bot. Runs a real tool-calling loop (Vercel AI SDK, `stopWhen: stepCountIs(5)`) with 5 tools it decides when to invoke: search open jobs, pull live salary benchmarks, add a skill to the candidate's profile, traverse the career graph toward a stated target role (shortest-path + skill gaps), and check real application status. It reasons over the candidate's actual data, not a static prompt.
+- **AI coach (agentic)** - not a canned Q&A bot. Runs a real tool-calling loop (Vercel AI SDK, `stopWhen: stepCountIs(5)`) with 8 tools it decides when to invoke: search open jobs, pull live salary benchmarks, add/remove a skill on the candidate's profile, update profile fields, apply to a job directly, traverse the career graph toward a stated target role (shortest-path + skill gaps), and check real application status. It reasons over the candidate's actual data, not a static prompt.
 - **Certificates** - auto-parse and store Coursera credentials; skill suggestions tied to career progression
 - **Job discovery** - browse open positions (demo mode includes filtering by salary, location, skills)
 - **Applications** - apply to jobs and track pipeline stage
 
 ### Employer side
 - **Setup** - single-step company profile creation
+- **Company profile** - edit company name, industry, size, website post-setup
 - **Job posting** - create and manage open positions
 - **Talent search** - scout candidate profiles and save to talent pools
 - **Pipeline** - manage applications through recruiting stages
@@ -32,14 +34,14 @@ A two-sided career platform that matches candidates to opportunities and helps e
 - **Backend:** Next.js API routes, Supabase (PostgreSQL + Auth)
 - **AI:** Groq API (`llama-3.3-70b-versatile`) via Vercel AI SDK
 - **Visualization:** React Flow for career graph
-- **Design:** Dark mode, amber/gold accent, trading-terminal aesthetic
+- **Design:** Dark mode by default with a light mode toggle (`next-themes`), amber/gold accent, trading-terminal aesthetic
 
 ## Setup
 
 ### Prerequisites
 1. **Supabase project** - create a project at [supabase.com](https://supabase.com)
 2. **Groq API key** - get one at [console.groq.com](https://console.groq.com)
-3. **Node.js 18+** and npm
+3. **Node.js 20.9+** and npm
 
 ### Installation
 
@@ -91,16 +93,25 @@ app/
 │   ├── onboarding       # Profile setup wizard
 │   ├── dashboard        # Home page after login
 │   ├── portfolio        # View profile + qualifications
+│   ├── profile/edit     # Edit basic info, education, work exp, skills, portfolio
 │   ├── certificates     # Coursera credential mgmt
 │   ├── coach            # AI coaching chat
 │   ├── explore          # Career graph visualization
 │   ├── jobs             # Job board
+│   ├── applications     # Track submitted applications + pipeline stage
 │   └── pay              # Salary information
-├── (employer)/          # Employer routes
-│   ├── employer/setup   # Company profile creation
-│   └── pipeline         # Kanban-style application tracking
+├── (employer)/employer/ # Employer routes
+│   ├── setup            # Company profile creation
+│   ├── profile          # Edit company details
+│   ├── dashboard        # Home page after login
+│   ├── jobs             # Post + manage open positions
+│   ├── search           # Talent search
+│   ├── pipeline         # Kanban-style application tracking
+│   └── re-engage        # AI-ranked outreach suggestions
+├── p/[candidateId]/     # Public, no-auth portfolio page
 └── api/
     ├── ai/              # AI endpoints (coach, matching, extraction)
+    ├── resumes/         # Resume upload + AI parsing
     ├── certificates/    # Coursera parsing + skill suggestions
     ├── demo             # Demo account seeding
     └── ...
@@ -117,17 +128,16 @@ See [TODO.md](./TODO.md) for the full roadmap and feature blockers.
 
 ## Project Status
 
-- **Intent Form deadline:** 15 June 2026
-- **Stage 2 build deadline:** 26 July 2026
 - **Blockers resolved:** Supabase, Groq integration, demo mode
-- **Critical in progress:** Job posting, apply button, candidate application tracking
+- **Core loop complete:** job posting, apply flow, application tracking, pipeline, re-engagement, resume auto-fill, profile editing
+- **Remaining:** saved jobs/bookmarks, coach session persistence, rate limiting on coach endpoint, employer pipeline analytics
 
 For detailed feature status, see [TODO.md](./TODO.md).
 
 ## Design Standards
 
 All frontend work follows these constraints:
-- Dark mode with amber/gold accent on deep navy-black
+- Dark mode by default (with light mode toggle) - amber/gold accent on deep navy-black
 - Typography: Bricolage Grotesque (headings) + Geist Sans (body)
 - No side-stripe card borders, no gradient text
 - OKLCH color space for all custom colors
@@ -138,12 +148,15 @@ See `.impeccable.md` for the full design system.
 ## Development
 
 ```bash
-npm run dev      # Start dev server
-npm run build    # Build for production
-npm run start    # Start production server
-npm run lint     # Run linter
+npm run dev        # Start dev server
+npm run build      # Build for production
+npm run start      # Start production server
+npm run lint       # Run linter
+npm test           # Run unit/API tests (Vitest)
+npm run test:e2e   # Run end-to-end tests (Playwright)
+npm run seed:demo  # Seed demo candidate + employer data locally
 ```
 
 ## Contributing
 
-This is a hackathon project with tight deadlines. See [CLAUDE.md](./.claude/CLAUDE.md) for project-specific instructions and [TODO.md](./TODO.md) for the task list.
+This is a hackathon project with tight deadlines, originally built as the Talentbank Hackathon 2026 entry and later rebranded to Path OS. See [CLAUDE.md](./.claude/CLAUDE.md) for project-specific instructions and [TODO.md](./TODO.md) for the task list.

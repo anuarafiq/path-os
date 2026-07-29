@@ -3,8 +3,6 @@
 ## Stack
 Next.js 16.2.7 (App Router, Turbopack) + Supabase + Groq API (llama-3.3-70b-versatile via @ai-sdk/groq) + Tailwind CSS v4 + shadcn/ui + React Flow
 
-Deadlines: Intent Form **15 June 2026** · Stage 2 build **26 July 2026**
-
 See [ARCHITECTURE.md](ARCHITECTURE.md) for feature implementation notes.
 
 ## Documentation Rule
