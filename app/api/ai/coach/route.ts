@@ -96,10 +96,9 @@ Content rules:
 - You can mention salary ranges in MYR when relevant (e.g., "Senior Software Engineers in KL typically earn RM 9,000–15,000/month")
 - Do not repeat the user's profile back to them unless relevant
 
-You are equipped with tools to query open jobs, fetch salary benchmarks, update the user's profile,
-look up career path options toward a target role, and check the status of the user's job applications.
+You are equipped with tools to query open jobs, fetch salary benchmarks, add skills, remove skills, update the candidate's profile fields, apply to jobs directly on their behalf, look up career path options toward a target role, and check the status of the user's job applications.
 Always explain when you are running a tool and present the results clearly to the user.
-If you add a skill, confirm it to the user.`;
+If you add or remove a skill, or update the profile, or apply for a job, confirm it clearly to the user.`;
 
   const encoder = new TextEncoder();
 
@@ -288,6 +287,140 @@ If you add a skill, confirm it to the user.`;
             status: a.status,
             appliedAt: a.applied_at,
           }));
+        }
+      },
+
+      updateProfile: {
+        description: "Update fields on the candidate's profile (e.g., location, bio, seeking status, job title, years of experience, github_url, linkedin_url)",
+        inputSchema: z.object({
+          location: z.string().optional().describe("Candidate's city/state/country"),
+          bio: z.string().optional().describe("A brief summary/bio of the candidate"),
+          seeking: z.enum(["internship", "full_time"]).optional().describe("Type of role seeking"),
+          jobTitle: z.string().optional().describe("Current job title or target role"),
+          yearsExp: z.number().int().nonnegative().optional().describe("Years of experience"),
+          githubUrl: z.string().optional().describe("GitHub profile link"),
+          linkedinUrl: z.string().optional().describe("LinkedIn profile link"),
+        }),
+        execute: async (updates) => {
+          if (!candidateId) return { error: "Candidate profile not found." };
+
+          const dbUpdates: Record<string, unknown> = {};
+          if (updates.location !== undefined) dbUpdates.location = updates.location;
+          if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+          if (updates.seeking !== undefined) dbUpdates.seeking = updates.seeking;
+          if (updates.jobTitle !== undefined) dbUpdates.job_title = updates.jobTitle;
+          if (updates.yearsExp !== undefined) dbUpdates.years_exp = updates.yearsExp;
+          if (updates.githubUrl !== undefined) dbUpdates.github_url = updates.githubUrl;
+          if (updates.linkedinUrl !== undefined) dbUpdates.linkedin_url = updates.linkedinUrl;
+
+          if (Object.keys(dbUpdates).length === 0) {
+            return { message: "No updates provided." };
+          }
+
+          const { error } = await supabase
+            .from("candidate_profiles")
+            .update(dbUpdates)
+            .eq("id", candidateId);
+
+          if (error) {
+            return { error: `Failed to update profile: ${error.message}` };
+          }
+
+          return { success: true, message: "Successfully updated profile fields." };
+        }
+      },
+
+      applyToJob: {
+        description: "Submit a job application for the candidate using a Job ID. You should explain the role first, or if the user asks to apply to a job, search for it first, get the ID, and then call this tool.",
+        inputSchema: z.object({
+          jobId: z.string().describe("The UUID of the job to apply for"),
+          notes: z.string().optional().describe("An optional personalized cover note/message for the employer (highly recommended to generate based on profile & job requirements)"),
+        }),
+        execute: async ({ jobId, notes }) => {
+          if (!candidateId) return { error: "Candidate profile not found." };
+
+          // Verify job exists
+          const { data: job, error: jobError } = await supabase
+            .from("jobs")
+            .select("title, status, employer_profiles(company_name)")
+            .eq("id", jobId)
+            .single();
+
+          if (jobError || !job) {
+            return { error: "Job not found." };
+          }
+
+          if (job.status !== "open") {
+            return { error: `This job is currently ${job.status} and not accepting applications.` };
+          }
+
+          const employerProfiles = job.employer_profiles as unknown as
+            | { company_name: string }
+            | { company_name: string }[]
+            | null;
+          const companyName =
+            (Array.isArray(employerProfiles)
+              ? employerProfiles[0]?.company_name
+              : employerProfiles?.company_name) ?? "Unknown Company";
+
+          // Insert application
+          const { error: applyError } = await supabase
+            .from("applications")
+            .insert({
+              job_id: jobId,
+              candidate_id: candidateId,
+              status: "applied",
+              notes: notes || null
+            });
+
+          if (applyError) {
+            if (applyError.code === "23505") {
+              return { message: `You have already applied to the ${job.title} position at ${companyName}.` };
+            }
+            return { error: `Failed to submit application: ${applyError.message}` };
+          }
+
+          return {
+            success: true,
+            message: `Successfully applied to ${job.title} at ${companyName}.`
+          };
+        }
+      },
+
+      removeSkillFromProfile: {
+        description: "Remove a skill from the candidate's profile",
+        inputSchema: z.object({
+          skillName: z.string().describe("The name of the skill to remove (e.g., Python, TypeScript)"),
+        }),
+        execute: async ({ skillName }) => {
+          if (!candidateId) return { error: "Candidate profile not found." };
+
+          const { data: skill, error: skillError } = await supabase
+            .from("skills")
+            .select("id")
+            .ilike("name", skillName)
+            .maybeSingle();
+
+          if (skillError || !skill) {
+            return { error: `Skill "${skillName}" not found in database.` };
+          }
+
+          const { data, error: deleteError } = await supabase
+            .from("candidate_skills")
+            .delete()
+            .eq("candidate_id", candidateId)
+            .eq("skill_id", skill.id)
+            .select();
+
+          if (deleteError) {
+            return { error: `Failed to remove skill: ${deleteError.message}` };
+          }
+
+          if (!data || data.length === 0) {
+            return { message: `Skill "${skillName}" is not on your profile.` };
+          }
+
+          return { success: true, message: `Successfully removed "${skillName}" from your profile.` };
         }
       }
     }

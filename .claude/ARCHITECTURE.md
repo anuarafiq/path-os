@@ -50,7 +50,7 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 
 | Route | Method | Auth | Key params |
 |---|---|---|---|
-| `/api/ai/coach` | POST | candidate | maxOutputTokens 1024, 10-message sliding window, tool-calling loop (`stopWhen: stepCountIs(5)`) with 5 tools: `findMatchingJobs`, `getSalaryBenchmarks`, `addSkillToProfile`, `getCareerPathOptions` (reuses `lib/career-path.ts`'s `findShortestPath`), `getApplicationStatus` |
+| `/api/ai/coach` | POST | candidate | maxOutputTokens 1024, 10-message sliding window, tool-calling loop (`stopWhen: stepCountIs(5)`) with 8 tools: `findMatchingJobs`, `getSalaryBenchmarks`, `addSkillToProfile`, `removeSkillFromProfile`, `updateProfile`, `applyToJob`, `getCareerPathOptions` (reuses `lib/career-path.ts`'s `findShortestPath`), `getApplicationStatus` |
 | `/api/ai/cover-note` | POST | candidate | maxOutputTokens 512, takes `{ jobId }` |
 | `/api/ai/skill-gap` | POST | candidate | maxOutputTokens 800, takes `{ currentRole, targetRole, missingSkills }` |
 | `/api/ai/job-fit` | POST | candidate | **no Groq call** — deterministic case-insensitive skill-overlap scoring (`matched/required * 100`, empty `required_skills` → neutral 50) with a templated one-sentence summary; returns `{ score: 0-100, summary }` |
