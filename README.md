@@ -2,6 +2,8 @@
 
 A two-sided career platform that matches candidates to opportunities and helps employers build talent pipelines.
 
+**Live:** [path-os-five-omega.vercel.app](https://path-os-five-omega.vercel.app)
+
 ## Features
 
 ### Candidate side
