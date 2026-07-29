@@ -46,7 +46,7 @@ export function FairPayEngine({
   }, [salaryData, role, location, expBand]);
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 max-w-2xl">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-2xl mx-auto">
       <h1 className="font-heading text-3xl font-bold mb-1">Fair Pay Engine</h1>
       <p className="text-muted-foreground text-sm mb-8">Know your market value before your next negotiation.</p>
 
