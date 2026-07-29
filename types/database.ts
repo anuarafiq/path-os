@@ -41,6 +41,7 @@ export type Database = {
           seeking: "internship" | "full_time";
           job_title: string | null;
           years_exp: number | null;
+          resume_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -55,6 +56,7 @@ export type Database = {
           seeking: "internship" | "full_time";
           job_title?: string | null;
           years_exp?: number | null;
+          resume_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -69,6 +71,7 @@ export type Database = {
           seeking?: "internship" | "full_time";
           job_title?: string | null;
           years_exp?: number | null;
+          resume_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };

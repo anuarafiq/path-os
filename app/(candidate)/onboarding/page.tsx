@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { ResumeUpload } from "@/components/ResumeUpload";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -34,6 +35,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [allSkills, setAllSkills] = useState<Skill[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Step 1 — basic info
   const [name, setName] = useState("");
@@ -41,6 +43,7 @@ export default function OnboardingPage() {
   const [bio, setBio] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
 
   // Step 2 — seeking
   const [seeking, setSeeking] = useState<SeekingType>("full_time");
@@ -85,6 +88,9 @@ export default function OnboardingPage() {
   useEffect(() => {
     supabase.from("skills").select("*").order("category").then(({ data }) => {
       if (data) setAllSkills(data);
+    });
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUserId(data.user.id);
     });
   }, []);
 
@@ -186,6 +192,7 @@ export default function OnboardingPage() {
         seeking,
         job_title: currentRole || null,
         years_exp: yearsExp ? parseInt(yearsExp) : null,
+        resume_url: resumeUrl,
       })
       .select("id")
       .single();
@@ -331,6 +338,9 @@ export default function OnboardingPage() {
                 <Input id="linkedin" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="linkedin.com/in/..." />
               </div>
             </div>
+            {userId && (
+              <ResumeUpload userId={userId} value={resumeUrl} onChange={setResumeUrl} />
+            )}
           </div>
         )}
 

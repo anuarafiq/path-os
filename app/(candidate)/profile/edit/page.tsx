@@ -17,7 +17,7 @@ export default async function ProfileEditPage() {
 
   const { data: candidate } = await supabase
     .from("candidate_profiles")
-    .select("id, name, location, bio, github_url, linkedin_url, seeking, job_title, years_exp")
+    .select("id, name, location, bio, github_url, linkedin_url, seeking, job_title, years_exp, resume_url")
     .eq("profile_id", profile.id)
     .single();
 
@@ -29,7 +29,7 @@ export default async function ProfileEditPage() {
         <h1 className="font-heading text-2xl font-bold mb-1">Edit profile</h1>
         <p className="text-sm text-muted-foreground">Update your personal info and preferences.</p>
       </div>
-      <ProfileEditForm candidate={candidate} />
+      <ProfileEditForm candidate={candidate} userId={user.id} />
     </div>
   );
 }

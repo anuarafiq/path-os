@@ -9,6 +9,7 @@ Implementation details grouped by domain. Read this when working on a specific a
 - Signup redirect: employers → `/employer/dashboard`, candidates → `/onboarding` — prevents employers landing on candidate onboarding. `app/(auth)/signup/page.tsx`
 - `useSearchParams()` in signup page wrapped in Suspense boundary — Next.js 16 requirement
 - Resume auto-fill at `/onboarding` — pre-screen (`showImport` state, default `true`) renders before the wizard. Candidate pastes CV text; `POST /api/resumes/parse` calls Groq (`generateText`, maxOutputTokens 2048) returns structured JSON. Client merges into all wizard state vars; skills matched case-insensitively against `allSkills` pre-selected at "mid" level. "Skip, fill manually" bypasses. Input capped at 20,000 chars. Double-parse fallback with regex `/\{[\s\S]*\}/`.
+- Resume file upload — separate from the text-paste auto-fill above (no extraction, just storage). `components/ResumeUpload.tsx` (shared by onboarding Step 0 and `/profile/edit`) uploads to the private `resumes` Supabase Storage bucket at `{user_id}/resume.{ext}` (upsert on replace, so no orphaned objects). Client validates extension (pdf/doc/docx) and size (≤5MB) before uploading. The component only performs the storage call; the resulting path is held in the parent's state and written to `candidate_profiles.resume_url` as part of the existing Finish/Save action, same as every other field. Viewing generates a 60s signed URL on click rather than exposing a public URL.
 
 ---
 
@@ -38,7 +39,8 @@ Implementation details grouped by domain. Read this when working on a specific a
 
 - Admin client at `lib/supabase/admin.ts` — uses service role key, bypasses RLS, server-only
 - `proxy.ts` has early return guard when env vars are missing (landing page works without Supabase)
-- Migration index: `001` base schema · `002` jobs/applications · `003` service_role grants · `004` credential_url on qualifications
+- Migration index: `001` base schema · `002` jobs/applications · `003` service_role grants · `004` credential_url on qualifications · `010` resumes storage bucket + `candidate_profiles.resume_url`
+- `resumes` Storage bucket (migration 010) — private (`public: false`). RLS on `storage.objects` is a path-prefix check (`(storage.foldername(name))[1] = auth.uid()::text`), not a join back to `candidate_profiles`/`profiles` — avoids the cross-table RLS recursion trap (see gotcha below). No new `service_role` grant needed for the new `resume_url` column since `003` already grants full table access on `candidate_profiles`, and `service_role` bypasses storage RLS by default.
 
 ---
 
@@ -102,7 +104,8 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 - After adding a cert, shows which career roles the suggested skills move the candidate toward (uses `career_edges.skill_gaps`).
 
 ### Profile Edit (`/profile/edit`)
-- Server page fetches `candidate_profiles`, passes to `ProfileEditForm` (client). Does `UPDATE` on `candidate_profiles`.
+- Server page fetches `candidate_profiles`, passes to `ProfileEditForm` (client) along with `userId={user.id}` (needed for the resume upload's storage path). Does `UPDATE` on `candidate_profiles`.
+- Renders `<ResumeUpload>` (see Auth & Onboarding above) so candidates can attach/replace/remove their resume post-onboarding, same component and bucket as the wizard.
 
 ### Public Portfolio (`/p/[candidateId]`)
 - `app/p/[candidateId]/page.tsx` — public server component, no auth gate. Uses the **anon server client** (`@/lib/supabase/server` `createClient()`) and calls the `get_public_portfolio(p_id)` RPC (security hardening, migration 005), **not** the service-role admin client and **not** direct table selects. The RPC returns one candidate's full portfolio as JSON only when `is_public = true`; private/missing → `null` → `notFound()`. `fetchPortfolio()` helper wraps the rpc call; both `generateMetadata` and the page use it.

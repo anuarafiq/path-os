@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ResumeUpload } from "@/components/ResumeUpload";
 import { cn } from "@/lib/utils";
 
 type SeekingType = "internship" | "full_time";
@@ -21,9 +22,10 @@ type Candidate = {
   seeking: string | null;
   job_title: string | null;
   years_exp: number | null;
+  resume_url: string | null;
 };
 
-export function ProfileEditForm({ candidate }: { candidate: Candidate }) {
+export function ProfileEditForm({ candidate, userId }: { candidate: Candidate; userId: string }) {
   const router = useRouter();
 
   const [name, setName] = useState(candidate.name ?? "");
@@ -34,6 +36,7 @@ export function ProfileEditForm({ candidate }: { candidate: Candidate }) {
   const [seeking, setSeeking] = useState<SeekingType>((candidate.seeking as SeekingType) ?? "full_time");
   const [jobTitle, setJobTitle] = useState(candidate.job_title ?? "");
   const [yearsExp, setYearsExp] = useState(candidate.years_exp?.toString() ?? "");
+  const [resumeUrl, setResumeUrl] = useState(candidate.resume_url ?? null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +61,7 @@ export function ProfileEditForm({ candidate }: { candidate: Candidate }) {
         seeking,
         job_title: jobTitle.trim() || null,
         years_exp: yearsExp ? parseInt(yearsExp) : null,
+        resume_url: resumeUrl,
       })
       .eq("id", candidate.id);
 
@@ -125,6 +129,8 @@ export function ProfileEditForm({ candidate }: { candidate: Candidate }) {
           />
         </div>
       </div>
+
+      <ResumeUpload userId={userId} value={resumeUrl} onChange={setResumeUrl} />
 
       <div className="flex flex-col gap-2">
         <Label>I&apos;m looking for</Label>
