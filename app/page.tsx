@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import DemoLogin from "@/components/DemoLogin";
+import { Route, Bot, DollarSign, FolderKanban, UserSearch, RefreshCw } from "lucide-react";
 
 export default function Home() {
   return (
@@ -121,7 +122,7 @@ export default function Home() {
               key={f.title}
               className="bg-card border border-border rounded-lg p-6"
             >
-              <div className="text-brand text-2xl mb-3">{f.icon}</div>
+              <f.icon className="w-6 h-6 text-brand mb-3" aria-hidden="true" />
               <h3 className="font-heading font-semibold text-foreground mb-1.5">
                 {f.title}
               </h3>
@@ -142,32 +143,32 @@ export default function Home() {
 
 const features = [
   {
-    icon: "◈",
+    icon: Route,
     title: "Career Path Navigator",
     desc: "See realistic role-to-role transitions, skill gaps, and salary deltas — across 30+ APAC career paths.",
   },
   {
-    icon: "◉",
+    icon: Bot,
     title: "AI Career Coach",
     desc: "A coach that reads your full profile and gives context-aware next steps, not generic advice.",
   },
   {
-    icon: "◐",
+    icon: DollarSign,
     title: "Fair Pay Engine",
     desc: "Know your market value. P25/P50/P75 salary benchmarks by role, location, and experience band.",
   },
   {
-    icon: "◑",
+    icon: FolderKanban,
     title: "Living Portfolio",
     desc: "A dynamic profile that evolves with your skills, qualifications, and projects — shareable as a public page.",
   },
   {
-    icon: "◒",
+    icon: UserSearch,
     title: "Smart Talent Matching",
     desc: "For employers: describe a role in plain language, get an AI-ranked shortlist with fit explanations.",
   },
   {
-    icon: "◓",
+    icon: RefreshCw,
     title: "Talent Re-Engagement",
     desc: "Surface past applicants and alumni who are now a strong fit for new open roles.",
   },
