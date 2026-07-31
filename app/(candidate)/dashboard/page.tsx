@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Route, Bot, DollarSign, FolderKanban } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -51,18 +52,24 @@ export default async function DashboardPage() {
   ];
   const completionScore = Math.round((completionItems.filter((i) => i.done).length / completionItems.length) * 100);
 
+  const stats = [
+    { label: "Qualifications", value: qualCount ?? 0, accent: "text-brand" },
+    { label: "Work experiences", value: workCount ?? 0, accent: "text-accent-purple" },
+    { label: "Skills", value: skillCount ?? 0, accent: "text-accent-pink" },
+  ];
+
   const quickActions = [
-    { href: "/explore", label: "Explore career paths", desc: "See where you can go from here", icon: Route },
-    { href: "/coach", label: "Chat with AI Coach", desc: "Get personalised career advice", icon: Bot },
-    { href: "/pay", label: "Check your market rate", desc: "See salary benchmarks for your role", icon: DollarSign },
-    { href: "/portfolio", label: "View your portfolio", desc: "See how employers see your profile", icon: FolderKanban },
+    { href: "/explore", label: "Explore career paths", desc: "See where you can go from here", icon: Route, coach: false },
+    { href: "/coach", label: "Chat with AI Coach", desc: "Get personalised career advice", icon: Bot, coach: true },
+    { href: "/pay", label: "Check your market rate", desc: "See salary benchmarks for your role", icon: DollarSign, coach: false },
+    { href: "/portfolio", label: "View your portfolio", desc: "See how employers see your profile", icon: FolderKanban, coach: false },
   ];
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8">
       {/* Welcome */}
-      <div className="mb-8">
-        <h1 className="font-heading text-3xl font-bold mb-1">
+      <div className="mb-8 animate-rise" style={{ "--i": 0 } as React.CSSProperties}>
+        <h1 className="font-heading text-4xl font-bold mb-1">
           Welcome back, {candidate.name.split(" ")[0]}
         </h1>
         <p className="text-muted-foreground text-sm">
@@ -72,25 +79,28 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Profile completion */}
-      <div className="bg-card border border-border rounded-lg p-5 mb-8">
+      {/* Profile completion — purple → pink gradient hero */}
+      <div
+        className="bg-gradient-hero rounded-xl p-5 mb-8 shadow-hero animate-rise"
+        style={{ "--i": 1 } as React.CSSProperties}
+      >
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-heading font-semibold text-sm uppercase tracking-wider text-muted-foreground">Profile strength</h2>
-          <span className="text-brand tabular font-semibold text-sm">{completionScore}%</span>
+          <h2 className="font-heading font-semibold text-sm uppercase tracking-wider text-white/85 on-gradient">Profile strength</h2>
+          <span className="tabular font-semibold text-sm text-white on-gradient">{completionScore}%</span>
         </div>
-        <div className="h-1.5 bg-secondary rounded-full mb-4">
+        <div className="h-1.5 bg-white/25 rounded-full mb-4">
           <div
-            className="h-1.5 bg-brand rounded-full transition-all"
+            className="h-1.5 bg-white rounded-full transition-all"
             style={{ width: `${completionScore}%` }}
           />
         </div>
         <div className="grid grid-cols-2 gap-2">
           {completionItems.map((item) => (
             <div key={item.label} className="flex items-center gap-2 text-sm">
-              <span className={item.done ? "text-success" : "text-muted-foreground"}>
+              <span className={item.done ? "text-white" : "text-white/55"}>
                 {item.done ? "✓" : "○"}
               </span>
-              <span className={item.done ? "text-foreground" : "text-muted-foreground"}>
+              <span className={cn("on-gradient", item.done ? "text-white" : "text-white/70")}>
                 {item.label}
               </span>
             </div>
@@ -100,36 +110,53 @@ export default async function DashboardPage() {
 
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {[
-          { label: "Qualifications", value: qualCount ?? 0 },
-          { label: "Work experiences", value: workCount ?? 0 },
-          { label: "Skills", value: skillCount ?? 0 },
-        ].map((stat) => (
-          <div key={stat.label} className="bg-card border border-border rounded-lg px-5 py-4">
-            <p className="text-brand tabular text-2xl font-bold font-heading mb-0.5">{stat.value}</p>
+        {stats.map((stat, i) => (
+          <div
+            key={stat.label}
+            className="bg-card border border-border rounded-lg px-5 py-4 shadow-card animate-rise"
+            style={{ "--i": 2 + i } as React.CSSProperties}
+          >
+            <p className={cn("tabular text-2xl font-bold font-heading mb-0.5", stat.accent)}>{stat.value}</p>
             <p className="text-xs text-muted-foreground">{stat.label}</p>
           </div>
         ))}
       </div>
 
       {/* Quick actions */}
-      <h2 className="font-heading font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3">
-        Quick actions
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {quickActions.map((action) => (
-          <Link
-            key={action.href}
-            href={action.href}
-            className="flex items-start gap-4 bg-card border border-border rounded-lg p-4 hover:border-brand/40 hover:bg-brand-subtle/30 transition-all group"
-          >
-            <action.icon className="w-5 h-5 text-brand mt-0.5 shrink-0" aria-hidden="true" />
-            <div>
-              <p className="font-medium text-sm text-foreground group-hover:text-brand transition-colors">{action.label}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{action.desc}</p>
-            </div>
-          </Link>
-        ))}
+      <div
+        className="border border-border rounded-xl p-5 animate-rise"
+        style={{ "--i": 5 } as React.CSSProperties}
+      >
+        <h2 className="font-heading font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3">
+          Quick actions
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {quickActions.map((action) => (
+            <Link
+              key={action.href}
+              href={action.href}
+              className={cn(
+                "flex items-start gap-4 rounded-lg p-4 transition-all duration-200 group hover:-translate-y-0.5 active:scale-[0.98]",
+                action.coach
+                  ? "bg-gradient-coach shadow-card hover:brightness-105"
+                  : "bg-accent-amber-subtle border border-transparent hover:border-accent-amber/50"
+              )}
+            >
+              <action.icon
+                className={cn("w-5 h-5 mt-0.5 shrink-0", action.coach ? "text-white" : "text-accent-amber-ink")}
+                aria-hidden="true"
+              />
+              <div>
+                <p className={cn("font-medium text-sm", action.coach ? "text-white on-gradient" : "text-foreground")}>
+                  {action.label}
+                </p>
+                <p className={cn("text-xs mt-0.5", action.coach ? "text-white/85 on-gradient" : "text-muted-foreground")}>
+                  {action.desc}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

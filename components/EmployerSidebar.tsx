@@ -94,7 +94,7 @@ export function EmployerSidebar({
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-56 shrink-0 border-r border-border flex-col h-screen sticky top-0">
+      <aside className="hidden md:flex w-56 shrink-0 border-r border-border flex-col h-screen sticky top-0 bg-sidebar">
         <div className="px-5 py-5 border-b border-border">
           <Logo size={80} className="rounded-md" />
           <p className="text-xs text-muted-foreground mt-1">Employer</p>
@@ -103,7 +103,7 @@ export function EmployerSidebar({
       </aside>
 
       {/* Mobile top bar */}
-      <div className="flex md:hidden items-center justify-between px-4 h-12 border-b border-border bg-background fixed top-0 left-0 right-0 z-30">
+      <div className="flex md:hidden items-center justify-between px-4 h-12 border-b border-border bg-sidebar fixed top-0 left-0 right-0 z-30">
         <div className="flex items-center gap-2">
           <Logo size={32} className="rounded-sm" />
           <span className="text-xs text-muted-foreground">Employer</span>
@@ -135,7 +135,7 @@ export function EmployerSidebar({
       {/* Mobile slide-in drawer */}
       <div
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-72 bg-background border-r border-border flex flex-col transition-transform duration-300 md:hidden",
+          "fixed top-0 left-0 z-50 h-full w-72 bg-sidebar border-r border-border flex flex-col transition-transform duration-300 md:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
