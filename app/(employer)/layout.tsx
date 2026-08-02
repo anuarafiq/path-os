@@ -15,7 +15,7 @@ export default async function EmployerLayout({
   const employer = await getEmployerProfile(profile.id);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="relative z-10 flex min-h-screen">
       <EmployerSidebar
         companyName={employer?.company_name ?? user.email ?? ""}
         email={user.email ?? ""}

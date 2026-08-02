@@ -5,7 +5,6 @@ import { UserSearch, KanbanSquare, RefreshCw, Briefcase, Users, Database } from 
 import { cn } from "@/lib/utils";
 import { HighlightGlowCard } from "@/components/HighlightGlowCard";
 import { DotGrid } from "@/components/DotGrid";
-import { DashboardBeams } from "@/components/DashboardBeams";
 
 export default async function EmployerDashboard() {
   const { user, profile } = await getSessionProfile();
@@ -53,7 +52,6 @@ export default async function EmployerDashboard() {
   return (
     <div className="relative px-4 py-6 md:px-8 md:py-8">
       <DotGrid />
-      <DashboardBeams />
       <div className="relative z-10">
       {/* Welcome — mirrors the candidate dashboard's greeting */}
       <div className="mb-8 animate-rise" style={{ "--i": 0 } as React.CSSProperties}>

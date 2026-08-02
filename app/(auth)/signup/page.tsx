@@ -53,7 +53,7 @@ function SignupForm() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <Link href="/" className="flex justify-center mb-8">
           <Logo size={64} className="rounded-md" />

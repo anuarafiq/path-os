@@ -58,7 +58,7 @@ export default async function PublicPortfolioPage({ params }: Props) {
   }, {});
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--background)" }}>
+    <div className="relative z-10 min-h-screen">
       {/* Minimal nav */}
       <header className="border-b" style={{ borderColor: "var(--border)" }}>
         <div className="max-w-3xl mx-auto px-4 md:px-8 py-4">

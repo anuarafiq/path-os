@@ -5,7 +5,6 @@ import { Route, Bot, DollarSign, FolderKanban, Check, Circle, GraduationCap, Bri
 import { cn } from "@/lib/utils";
 import { HighlightGlowCard } from "@/components/HighlightGlowCard";
 import { DotGrid } from "@/components/DotGrid";
-import { DashboardBeams } from "@/components/DashboardBeams";
 
 export default async function DashboardPage() {
   const { user, profile: sessionProfile } = await getSessionProfile();
@@ -64,7 +63,6 @@ export default async function DashboardPage() {
   return (
     <div className="relative px-4 py-6 md:px-8 md:py-8">
       <DotGrid />
-      <DashboardBeams />
       <div className="relative z-10">
       {/* Welcome */}
       <div className="mb-8 animate-rise" style={{ "--i": 0 } as React.CSSProperties}>

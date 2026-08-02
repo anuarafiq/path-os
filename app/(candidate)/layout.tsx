@@ -15,7 +15,7 @@ export default async function CandidateLayout({
   const candidateProfile = profile ? await getCandidateProfile(profile.id) : null;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="relative z-10 flex min-h-screen">
       <CandidateSidebar
         name={candidateProfile?.name ?? user.email ?? ""}
         email={user.email ?? ""}

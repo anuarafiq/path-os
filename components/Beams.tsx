@@ -14,6 +14,7 @@ interface BeamsProps {
   beamNumber?: number;
   beamSpacing?: number;
   lightColor?: string;
+  diffuseColor?: string;
   speed?: number;
   noiseIntensity?: number;
   scale?: number;
@@ -170,6 +171,7 @@ const Beams = ({
   beamNumber = 12,
   beamSpacing = 0,
   lightColor = "#ffffff",
+  diffuseColor = "#000000",
   speed = 2,
   noiseIntensity = 1.75,
   scale = 0.2,
@@ -221,7 +223,7 @@ const Beams = ({
         },
         material: { fog: true },
         uniforms: {
-          diffuse: new THREE.Color(...hexToNormalizedRGB("#000000")),
+          diffuse: new THREE.Color(...hexToNormalizedRGB(diffuseColor)),
           time: { shared: true, mixed: true, linked: true, value: 0 },
           roughness: 0.3,
           metalness: 0.3,
@@ -231,7 +233,7 @@ const Beams = ({
           uScale: scale,
         },
       }),
-    [speed, noiseIntensity, scale]
+    [speed, noiseIntensity, scale, diffuseColor]
   );
 
   return (
