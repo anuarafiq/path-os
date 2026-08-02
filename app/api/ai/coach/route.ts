@@ -1,25 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { groq, MODEL } from "@/lib/claude/client";
-import { streamText, stepCountIs } from "ai";
+import { streamText, stepCountIs, convertToModelMessages, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/validate";
 import { findShortestPath } from "@/lib/career-path";
 import type { Database } from "@/types/database";
+import { CANDIDATE_ROUTES } from "@/lib/agent-routes";
 
 type CareerNode = Database["public"]["Tables"]["career_nodes"]["Row"];
 type CareerEdge = Database["public"]["Tables"]["career_edges"]["Row"];
 
 const Body = z.object({
-  messages: z
-    .array(
-      z.object({
-        role: z.enum(["user", "assistant"]),
-        content: z.string().min(1).max(4000),
-      })
-    )
-    .min(1)
-    .max(50),
+  messages: z.array(z.record(z.string(), z.unknown())).min(1).max(50),
 });
 
 export async function POST(req: Request) {
@@ -29,7 +22,7 @@ export async function POST(req: Request) {
 
   const parsed = await parseBody(req, Body);
   if ("error" in parsed) return parsed.error;
-  const { messages } = parsed.data;
+  const messages = parsed.data.messages as unknown as UIMessage[];
 
   const { data: profile } = await supabase.from("profiles").select("id").eq("user_id", user.id).single();
   const profileId = profile?.id ?? "";
@@ -96,16 +89,15 @@ Content rules:
 - You can mention salary ranges in MYR when relevant (e.g., "Senior Software Engineers in KL typically earn RM 9,000–15,000/month")
 - Do not repeat the user's profile back to them unless relevant
 
-You are equipped with tools to query open jobs, fetch salary benchmarks, add skills, remove skills, update the candidate's profile fields, apply to jobs directly on their behalf, look up career path options toward a target role, and check the status of the user's job applications.
+You are equipped with tools to query open jobs, fetch salary benchmarks, add skills, remove skills, update the candidate's profile fields, apply to jobs directly on their behalf, look up career path options toward a target role, check the status of the user's job applications, and navigate them to a page in the app.
 Always explain when you are running a tool and present the results clearly to the user.
-If you add or remove a skill, or update the profile, or apply for a job, confirm it clearly to the user.`;
-
-  const encoder = new TextEncoder();
+If you add or remove a skill, or update the profile, or apply for a job, confirm it clearly to the user.
+Use navigateTo when the user asks to go/see/open a specific page, or right after an action where showing them the result is the obvious next step (e.g. after applying, offer to take them to their applications).`;
 
   const result = streamText({
     model: groq(MODEL),
     system: systemPrompt,
-    messages: messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
+    messages: await convertToModelMessages(messages.slice(-10)),
     maxOutputTokens: 1024,
     stopWhen: stepCountIs(5),
     tools: {
@@ -422,31 +414,18 @@ If you add or remove a skill, or update the profile, or apply for a job, confirm
 
           return { success: true, message: `Successfully removed "${skillName}" from your profile.` };
         }
-      }
+      },
+
+      navigateTo: {
+        description: "Send the candidate to a specific page in the app",
+        inputSchema: z.object({
+          path: z.enum(CANDIDATE_ROUTES),
+        }),
+        execute: async ({ path }) => ({ path }),
+      },
     }
   });
 
-  const readable = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const text of result.textStream) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
-        }
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
-      } catch (err) {
-        console.error("[coach] stream error:", err);
-        controller.error(err);
-      }
-    },
-  });
-
-  return new Response(readable, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
-  });
+  return result.toUIMessageStreamResponse();
 }
 

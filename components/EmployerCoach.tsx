@@ -10,21 +10,13 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 
 const STARTER_PROMPTS = [
-  "What career paths can I take from my current role?",
-  "How do I negotiate a higher salary in Malaysia?",
-  "What skills should I focus on in the next 6 months?",
-  "How do I prepare for senior-level interviews?",
+  "Post a new job for me",
+  "Show me my open jobs and how many applicants each has",
+  "Who are my newest applicants?",
+  "Move an applicant to shortlisted",
 ];
 
-export function CoachChat({
-  candidateName,
-  seeking,
-  currentRole,
-}: {
-  candidateName: string;
-  seeking: string;
-  currentRole: string | null;
-}) {
+export function EmployerCoach({ companyName }: { companyName: string }) {
   const router = useRouter();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -32,7 +24,7 @@ export function CoachChat({
   const navigatedToolCallIds = useRef(new Set<string>());
 
   const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/ai/coach" }),
+    transport: new DefaultChatTransport({ api: "/api/ai/employer-coach" }),
   });
 
   const streaming = status === "submitted" || status === "streaming";
@@ -82,10 +74,8 @@ export function CoachChat({
           ◉
         </div>
         <div>
-          <h1 className="font-heading font-semibold text-sm">AI Career Coach</h1>
-          <p className="text-xs text-muted-foreground">
-            {seeking === "internship" ? "Internship guidance" : currentRole ? `Career advice for ${currentRole}` : "Career guidance"}
-          </p>
+          <h1 className="font-heading font-semibold text-sm">Hiring Assistant</h1>
+          <p className="text-xs text-muted-foreground">{companyName}</p>
         </div>
       </div>
 
@@ -95,10 +85,10 @@ export function CoachChat({
           <div className="flex flex-col items-center justify-center flex-1 text-center py-12">
             <div className="text-4xl mb-4 text-brand">◉</div>
             <h2 className="font-heading text-lg font-semibold mb-2">
-              Hey {candidateName.split(" ")[0]}, what&apos;s on your mind?
+              What do you need to get done?
             </h2>
             <p className="text-sm text-muted-foreground mb-8 max-w-sm">
-              I know your profile. Ask me anything about your career — paths, salary, skills, or next steps.
+              I can post jobs, move applicants through your pipeline, save candidates to your talent pool, or take you to a page — just ask.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
               {STARTER_PROMPTS.map((prompt) => (
@@ -177,7 +167,7 @@ export function CoachChat({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything about your career..."
+            placeholder="Ask me to post a job, move an applicant, or find candidates..."
             rows={1}
             className="flex-1 resize-none"
             disabled={streaming}

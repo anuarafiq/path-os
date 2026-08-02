@@ -14,10 +14,12 @@ import {
   UserSearch,
   KanbanSquare,
   RefreshCw,
+  Bot,
 } from "lucide-react";
 
 const navItems = [
   { href: "/employer/dashboard", label: "Dashboard",       icon: LayoutDashboard },
+  { href: "/employer/coach",     label: "Hiring Assistant", icon: Bot },
   { href: "/employer/profile",   label: "Company Profile", icon: Building2 },
   { href: "/employer/jobs",      label: "Jobs",            icon: Briefcase },
   { href: "/employer/search",    label: "Find Talent",     icon: UserSearch },

@@ -3,6 +3,9 @@ import { createClient, getSessionProfile, getEmployerProfile } from "@/lib/supab
 import Link from "next/link";
 import { UserSearch, KanbanSquare, RefreshCw, Briefcase, Users, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HighlightGlowCard } from "@/components/HighlightGlowCard";
+import { DotGrid } from "@/components/DotGrid";
+import { DashboardBeams } from "@/components/DashboardBeams";
 
 export default async function EmployerDashboard() {
   const { user, profile } = await getSessionProfile();
@@ -48,7 +51,10 @@ export default async function EmployerDashboard() {
   ];
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8">
+    <div className="relative px-4 py-6 md:px-8 md:py-8">
+      <DotGrid />
+      <DashboardBeams />
+      <div className="relative z-10">
       {/* Welcome — mirrors the candidate dashboard's greeting */}
       <div className="mb-8 animate-rise" style={{ "--i": 0 } as React.CSSProperties}>
         <h1 className="font-heading text-4xl font-bold mb-1">Welcome back</h1>
@@ -93,32 +99,40 @@ export default async function EmployerDashboard() {
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {actions.map((a) => (
-            <Link
-              key={a.href}
-              href={a.href}
-              className={cn(
-                "flex items-start gap-4 rounded-lg p-4 transition-all duration-200 group hover:-translate-y-0.5 active:scale-[0.98]",
-                a.highlight
-                  ? "bg-gradient-coach shadow-card hover:brightness-105"
-                  : "glass border border-transparent hover:border-brand/40 hover:bg-brand-subtle/30"
-              )}
-            >
-              <a.icon
-                className={cn("w-5 h-5 mt-0.5 shrink-0", a.highlight ? "text-white" : "text-brand")}
-                aria-hidden="true"
-              />
-              <div>
-                <p className={cn("font-medium text-sm", a.highlight ? "text-white on-gradient" : "text-foreground group-hover:text-brand transition-colors")}>
-                  {a.label}
-                </p>
-                <p className={cn("text-xs mt-0.5", a.highlight ? "text-white/85 on-gradient" : "text-muted-foreground")}>
-                  {a.desc}
-                </p>
-              </div>
-            </Link>
-          ))}
+          {actions.map((a) => {
+            const tile = (
+              <Link
+                key={a.href}
+                href={a.href}
+                className={cn(
+                  "flex items-start gap-4 rounded-lg p-4 transition-all duration-200 group hover:-translate-y-0.5 active:scale-[0.98]",
+                  a.highlight
+                    ? "bg-gradient-coach shadow-card hover:brightness-105"
+                    : "glass border border-transparent hover:border-brand/40 hover:bg-brand-subtle/30"
+                )}
+              >
+                <a.icon
+                  className={cn("w-5 h-5 mt-0.5 shrink-0", a.highlight ? "text-white" : "text-brand")}
+                  aria-hidden="true"
+                />
+                <div>
+                  <p className={cn("font-medium text-sm", a.highlight ? "text-white on-gradient" : "text-foreground group-hover:text-brand transition-colors")}>
+                    {a.label}
+                  </p>
+                  <p className={cn("text-xs mt-0.5", a.highlight ? "text-white/85 on-gradient" : "text-muted-foreground")}>
+                    {a.desc}
+                  </p>
+                </div>
+              </Link>
+            );
+            return a.highlight ? (
+              <HighlightGlowCard key={a.href}>{tile}</HighlightGlowCard>
+            ) : (
+              tile
+            );
+          })}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import DemoLogin from "@/components/DemoLogin";
+import { DotGrid } from "@/components/DotGrid";
+import Prism from "@/components/Prism";
 import { Route, Bot, DollarSign, FolderKanban, UserSearch, RefreshCw } from "lucide-react";
 
 export default function Home() {
@@ -26,7 +28,26 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-24 text-center">
+      <section className="relative overflow-hidden isolate flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-24 text-center">
+        <DotGrid />
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_55%_45%_at_50%_0%,var(--brand-subtle),transparent_70%)]"
+        />
+        <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
+          <Prism
+            animationType="rotate"
+            timeScale={0.35}
+            height={3.2}
+            baseWidth={5}
+            scale={3.2}
+            hueShift={1.65}
+            colorFrequency={0.8}
+            noise={0.2}
+            glow={0.5}
+            transparent
+          />
+        </div>
         <div className="inline-flex items-center gap-2 text-xs font-medium text-brand bg-brand-subtle px-3 py-1.5 rounded-full mb-8 tracking-wide uppercase">
           Path OS
         </div>
