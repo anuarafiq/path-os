@@ -8,27 +8,26 @@ import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
   Route,
   Bot,
   DollarSign,
   FolderKanban,
-  CircleUser,
   Award,
   Briefcase,
   ClipboardList,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/explore",   label: "Explore Paths", icon: Route },
-  { href: "/coach",     label: "AI Coach", icon: Bot },
-  { href: "/pay",       label: "Fair Pay", icon: DollarSign },
-  { href: "/portfolio",     label: "Portfolio",    icon: FolderKanban },
-  { href: "/profile/edit", label: "Profile",      icon: CircleUser },
-  { href: "/certificates", label: "Certificates", icon: Award },
-  { href: "/jobs",          label: "Jobs",         icon: Briefcase },
-  { href: "/applications",  label: "My Applications", icon: ClipboardList },
+  { href: "/explore", label: "Explore Paths", icon: Route },
+  { href: "/coach",   label: "AI Coach", icon: Bot },
+  { href: "/pay",     label: "Fair Pay", icon: DollarSign },
+  { href: "/jobs",    label: "Jobs", icon: Briefcase },
+];
+
+const dropdownExtraItems = [
+  { href: "/portfolio",    label: "Portfolio",       icon: FolderKanban },
+  { href: "/certificates", label: "Certificates",    icon: Award },
+  { href: "/applications", label: "My Applications", icon: ClipboardList },
 ];
 
 export function CandidateSidebar({
@@ -70,7 +69,9 @@ export function CandidateSidebar({
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border flex-col h-screen sticky top-0 bg-sidebar">
         <div className="px-5 py-5 border-b border-border">
-          <Logo size={80} className="rounded-md" />
+          <Link href="/dashboard">
+            <Logo size={80} className="rounded-md" />
+          </Link>
         </div>
         {navLinks}
         <div className="px-3 py-4 border-t border-border flex items-center justify-between gap-2">
@@ -79,6 +80,7 @@ export function CandidateSidebar({
             email={email}
             profileHref="/profile/edit"
             settingsHref="/settings"
+            extraItems={dropdownExtraItems}
           />
           <ThemeToggle />
         </div>
@@ -86,7 +88,9 @@ export function CandidateSidebar({
 
       {/* Mobile top bar */}
       <div className="flex md:hidden items-center justify-between px-4 h-12 border-b border-border bg-sidebar fixed top-0 left-0 right-0 z-30">
-        <Logo size={32} className="rounded-sm" />
+        <Link href="/dashboard">
+          <Logo size={32} className="rounded-sm" />
+        </Link>
         <div className="flex items-center gap-2">
           <ProfileDropdown
             compact
@@ -94,6 +98,7 @@ export function CandidateSidebar({
             email={email}
             profileHref="/profile/edit"
             settingsHref="/settings"
+            extraItems={dropdownExtraItems}
           />
           <button
             type="button"
@@ -128,7 +133,9 @@ export function CandidateSidebar({
         )}
       >
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <Logo size={40} className="rounded-sm" />
+          <Link href="/dashboard" onClick={() => setIsOpen(false)}>
+            <Logo size={40} className="rounded-sm" />
+          </Link>
           <button
             type="button"
             aria-label="Close navigation"

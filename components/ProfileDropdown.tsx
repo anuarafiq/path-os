@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Settings, LogOut } from "lucide-react";
+import { User, Settings, LogOut, type LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,12 +18,14 @@ export function ProfileDropdown({
   email,
   profileHref,
   settingsHref,
+  extraItems = [],
   compact = false,
 }: {
   name: string;
   email: string;
   profileHref: string;
   settingsHref: string;
+  extraItems?: { href: string; label: string; icon: LucideIcon }[];
   /** Avatar-only trigger for tight spaces (e.g. mobile top bar). Opens downward instead of up. */
   compact?: boolean;
 }) {
@@ -67,6 +69,12 @@ export function ProfileDropdown({
           <User className="w-4 h-4" />
           Profile
         </DropdownMenuItem>
+        {extraItems.map((item) => (
+          <DropdownMenuItem key={item.href} render={<Link href={item.href} />}>
+            <item.icon className="w-4 h-4" />
+            {item.label}
+          </DropdownMenuItem>
+        ))}
         <DropdownMenuItem render={<Link href={settingsHref} />}>
           <Settings className="w-4 h-4" />
           Settings
