@@ -19,7 +19,7 @@ import {
 
 const navItems = [
   { href: "/explore", label: "Explore Paths", icon: Route },
-  { href: "/coach",   label: "AI Coach", icon: Bot },
+  { href: "/coach",   label: "AI Coach", icon: Bot, panel: true },
   { href: "/pay",     label: "Fair Pay", icon: DollarSign },
   { href: "/jobs",    label: "Jobs", icon: Briefcase },
 ];
@@ -33,9 +33,13 @@ const dropdownExtraItems = [
 export function CandidateSidebar({
   name,
   email,
+  coachOpen,
+  onToggleCoach,
 }: {
   name: string;
   email: string;
+  coachOpen: boolean;
+  onToggleCoach?: () => void;
 }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -43,6 +47,29 @@ export function CandidateSidebar({
   const navLinks = (
     <nav className="flex-1 py-4 px-3 flex flex-col gap-0.5">
       {navItems.map((item) => {
+        if (item.panel && onToggleCoach) {
+          return (
+            <button
+              key={item.href}
+              type="button"
+              aria-pressed={coachOpen}
+              onClick={() => {
+                onToggleCoach();
+                setIsOpen(false);
+              }}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all",
+                coachOpen
+                  ? "bg-brand-subtle text-brand font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              )}
+            >
+              <item.icon className="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
+              {item.label}
+            </button>
+          );
+        }
+
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <Link

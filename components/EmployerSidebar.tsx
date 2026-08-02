@@ -19,7 +19,7 @@ import {
 
 const navItems = [
   { href: "/employer/dashboard", label: "Dashboard",       icon: LayoutDashboard },
-  { href: "/employer/coach",     label: "Hiring Assistant", icon: Bot },
+  { href: "/employer/coach",     label: "Hiring Assistant", icon: Bot, panel: true },
   { href: "/employer/profile",   label: "Company Profile", icon: Building2 },
   { href: "/employer/jobs",      label: "Jobs",            icon: Briefcase },
   { href: "/employer/search",    label: "Find Talent",     icon: UserSearch },
@@ -30,9 +30,13 @@ const navItems = [
 export function EmployerSidebar({
   companyName,
   email,
+  coachOpen,
+  onToggleCoach,
 }: {
   companyName: string;
   email: string;
+  coachOpen: boolean;
+  onToggleCoach?: () => void;
 }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -40,6 +44,29 @@ export function EmployerSidebar({
   const navLinks = (
     <nav className="flex-1 py-4 px-3 flex flex-col gap-0.5">
       {navItems.map((item) => {
+        if (item.panel && onToggleCoach) {
+          return (
+            <button
+              key={item.href}
+              type="button"
+              aria-pressed={coachOpen}
+              onClick={() => {
+                onToggleCoach();
+                setIsOpen(false);
+              }}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all",
+                coachOpen
+                  ? "bg-brand-subtle text-brand font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              )}
+            >
+              <item.icon className="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
+              {item.label}
+            </button>
+          );
+        }
+
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <Link

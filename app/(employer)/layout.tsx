@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionProfile, getEmployerProfile } from "@/lib/supabase/server";
-import { EmployerSidebar } from "@/components/EmployerSidebar";
+import { EmployerShell } from "@/components/EmployerShell";
 
 export default async function EmployerLayout({
   children,
@@ -15,15 +15,12 @@ export default async function EmployerLayout({
   const employer = await getEmployerProfile(profile.id);
 
   return (
-    <div className="relative z-10 flex min-h-screen">
-      <EmployerSidebar
-        companyName={employer?.company_name ?? user.email ?? ""}
-        email={user.email ?? ""}
-      />
-      <main className="flex-1 min-w-0 overflow-auto">
-        <div className="h-12 md:hidden" aria-hidden="true" />
-        {children}
-      </main>
-    </div>
+    <EmployerShell
+      companyName={employer?.company_name ?? user.email ?? ""}
+      email={user.email ?? ""}
+      employerProfile={employer}
+    >
+      {children}
+    </EmployerShell>
   );
 }

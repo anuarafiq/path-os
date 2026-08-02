@@ -16,7 +16,15 @@ const STARTER_PROMPTS = [
   "Move an applicant to shortlisted",
 ];
 
-export function EmployerCoach({ companyName }: { companyName: string }) {
+export function EmployerCoach({
+  companyName,
+  inPanel,
+  onClose,
+}: {
+  companyName: string;
+  inPanel?: boolean;
+  onClose?: () => void;
+}) {
   const router = useRouter();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -67,16 +75,28 @@ export function EmployerCoach({ companyName }: { companyName: string }) {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh]">
+    <div className={cn("flex flex-col", inPanel ? "h-full" : "h-[100dvh]")}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-sm">
-          ◉
+      <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-sm">
+            ◉
+          </div>
+          <div>
+            <h1 className="font-heading font-semibold text-sm">Hiring Assistant</h1>
+            <p className="text-xs text-muted-foreground">{companyName}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="font-heading font-semibold text-sm">Hiring Assistant</h1>
-          <p className="text-xs text-muted-foreground">{companyName}</p>
-        </div>
+        {onClose && (
+          <button
+            type="button"
+            aria-label="Close chat"
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-xl leading-none shrink-0"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       {/* Messages */}

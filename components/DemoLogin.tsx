@@ -38,7 +38,7 @@ export default function DemoLogin() {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-muted-foreground">One-click demo — no account needed</p>
+      <p className="hero-text-shadow text-sm text-foreground/75">One-click demo — no account needed</p>
       <div className="flex flex-col sm:flex-row items-center gap-3">
         <button
           onClick={() => handleDemo("candidate")}
@@ -55,7 +55,7 @@ export default function DemoLogin() {
           {loading === "employer" ? "Signing in…" : "Demo: Employer"}
         </button>
       </div>
-      <p className="text-xs text-muted-foreground">Walkthrough below ↓ — 2 min to explore both paths</p>
+      <p className="hero-text-shadow text-xs text-foreground/70">Walkthrough below ↓ — 2 min to explore both paths</p>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );

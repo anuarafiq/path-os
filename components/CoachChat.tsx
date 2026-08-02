@@ -20,10 +20,14 @@ export function CoachChat({
   candidateName,
   seeking,
   currentRole,
+  inPanel,
+  onClose,
 }: {
   candidateName: string;
   seeking: string;
   currentRole: string | null;
+  inPanel?: boolean;
+  onClose?: () => void;
 }) {
   const router = useRouter();
   const [input, setInput] = useState("");
@@ -75,18 +79,30 @@ export function CoachChat({
   }
 
   return (
-    <div className="flex flex-col h-[100dvh]">
+    <div className={cn("flex flex-col", inPanel ? "h-full" : "h-[100dvh]")}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-sm">
-          ◉
+      <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-sm">
+            ◉
+          </div>
+          <div>
+            <h1 className="font-heading font-semibold text-sm">AI Career Coach</h1>
+            <p className="text-xs text-muted-foreground">
+              {seeking === "internship" ? "Internship guidance" : currentRole ? `Career advice for ${currentRole}` : "Career guidance"}
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="font-heading font-semibold text-sm">AI Career Coach</h1>
-          <p className="text-xs text-muted-foreground">
-            {seeking === "internship" ? "Internship guidance" : currentRole ? `Career advice for ${currentRole}` : "Career guidance"}
-          </p>
-        </div>
+        {onClose && (
+          <button
+            type="button"
+            aria-label="Close chat"
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-xl leading-none shrink-0"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       {/* Messages */}

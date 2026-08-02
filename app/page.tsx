@@ -48,24 +48,37 @@ export default function Home() {
             transparent
           />
         </div>
-        <div className="inline-flex items-center gap-2 text-xs font-medium text-brand bg-brand-subtle px-3 py-1.5 rounded-full mb-8 tracking-wide uppercase">
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_62%_82%_at_50%_46%,var(--background)_0%,var(--background)_45%,transparent_82%)] opacity-95"
+        />
+        <div
+          className="animate-rise inline-flex items-center gap-2 text-xs font-medium text-brand bg-brand-subtle px-3 py-1.5 rounded-full mb-8 tracking-wide uppercase"
+          style={{ "--i": 0 } as React.CSSProperties}
+        >
           Path OS
         </div>
 
-        <h1 className="font-heading text-5xl md:text-7xl font-bold tracking-tight leading-[1.08] max-w-4xl mb-6">
+        <h1
+          className="animate-rise hero-text-shadow font-heading text-5xl md:text-7xl font-bold tracking-tight leading-[1.08] max-w-4xl mb-6"
+          style={{ "--i": 1 } as React.CSSProperties}
+        >
           Navigate your career.{" "}
           <br />
           <span className="text-brand">See where you can go.</span>
         </h1>
 
-        <p className="text-muted-foreground text-lg md:text-xl max-w-2xl leading-relaxed mb-12">
+        <p
+          className="animate-rise hero-text-shadow text-foreground/80 text-lg md:text-xl max-w-2xl leading-relaxed mb-12"
+          style={{ "--i": 2 } as React.CSSProperties}
+        >
           Realistic career paths, salary benchmarks, and an AI coach that knows
           your profile — built for talent across Asia.
         </p>
 
         <DemoLogin />
 
-        <p className="text-xs text-muted-foreground mt-5">
+        <p className="hero-text-shadow text-xs text-foreground/70 mt-5">
           Building your own profile?{" "}
           <Link
             href="/signup?role=candidate"

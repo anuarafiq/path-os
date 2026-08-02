@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionProfile, getCandidateProfile } from "@/lib/supabase/server";
-import { CandidateSidebar } from "@/components/CandidateSidebar";
+import { CandidateShell } from "@/components/CandidateShell";
 
 export default async function CandidateLayout({
   children,
@@ -15,15 +15,12 @@ export default async function CandidateLayout({
   const candidateProfile = profile ? await getCandidateProfile(profile.id) : null;
 
   return (
-    <div className="relative z-10 flex min-h-screen">
-      <CandidateSidebar
-        name={candidateProfile?.name ?? user.email ?? ""}
-        email={user.email ?? ""}
-      />
-      <main className="flex-1 min-w-0 overflow-auto">
-        <div className="h-12 md:hidden" aria-hidden="true" />
-        {children}
-      </main>
-    </div>
+    <CandidateShell
+      name={candidateProfile?.name ?? user.email ?? ""}
+      email={user.email ?? ""}
+      candidateProfile={candidateProfile}
+    >
+      {children}
+    </CandidateShell>
   );
 }
