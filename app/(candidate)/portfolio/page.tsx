@@ -33,6 +33,7 @@ export default async function PortfolioPage() {
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl mx-auto">
+      <div className="glass border border-border rounded-xl p-6 md:p-8">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -249,6 +250,7 @@ export default async function PortfolioPage() {
           </div>
         </section>
       )}
+      </div>
     </div>
   );
 }

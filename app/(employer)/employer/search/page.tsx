@@ -67,7 +67,7 @@ export default function SmartMatchPage() {
         Describe the role you&apos;re hiring for. Our AI will rank the best-fit candidates from the talent pool.
       </p>
 
-      <div className="bg-card border border-border rounded-lg p-5 mb-6">
+      <div className="glass border border-border rounded-lg p-5 mb-6">
         <div className="flex flex-col gap-3">
           <Label htmlFor="jd">Job description or requirements</Label>
           <Textarea
@@ -95,7 +95,7 @@ export default function SmartMatchPage() {
 
           <div className="flex flex-col gap-3">
             {results.map((r, i) => (
-              <div key={r.candidateId} className="bg-card border border-border rounded-lg p-4">
+              <div key={r.candidateId} className="glass border border-border rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground tabular font-medium w-4">#{i + 1}</span>

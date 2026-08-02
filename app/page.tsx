@@ -69,7 +69,7 @@ export default function Home() {
             2-minute walkthrough
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-card border border-border rounded-lg p-6 flex flex-col gap-5">
+            <div className="glass border border-border rounded-lg p-6 flex flex-col gap-5">
               <div>
                 <p className="text-xs font-medium text-brand uppercase tracking-widest mb-1">Candidate</p>
                 <h3 className="font-heading font-semibold text-foreground text-lg">Ahmad Chicken</h3>
@@ -90,7 +90,7 @@ export default function Home() {
               </ol>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-6 flex flex-col gap-5">
+            <div className="glass border border-border rounded-lg p-6 flex flex-col gap-5">
               <div>
                 <p className="text-xs font-medium text-brand uppercase tracking-widest mb-1">Employer</p>
                 <h3 className="font-heading font-semibold text-foreground text-lg">TechCorp Malaysia</h3>
@@ -120,7 +120,7 @@ export default function Home() {
           {features.map((f) => (
             <div
               key={f.title}
-              className="bg-card border border-border rounded-lg p-6"
+              className="glass border border-border rounded-lg p-6"
             >
               <f.icon className="w-6 h-6 text-brand mb-3" aria-hidden="true" />
               <h3 className="font-heading font-semibold text-foreground mb-1.5">

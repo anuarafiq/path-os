@@ -79,7 +79,7 @@ export default function PipelineBoard({ initialApps, jobs }: Props) {
                   return (
                     <div
                       key={app.id}
-                      className="bg-card border border-border rounded-lg p-3"
+                      className="glass border border-border rounded-lg p-3"
                       style={{ opacity: isLoading ? 0.6 : 1 }}
                     >
                       <div className="flex items-center gap-2 mb-1.5">
@@ -158,7 +158,7 @@ export default function PipelineBoard({ initialApps, jobs }: Props) {
               {rejectedApps.map((app) => (
                 <div
                   key={app.id}
-                  className="bg-card border border-border rounded-lg p-3 w-64"
+                  className="glass border border-border rounded-lg p-3 w-64"
                   style={{ opacity: 0.5 }}
                 >
                   <div className="flex items-center gap-2 mb-1">

@@ -40,7 +40,7 @@ export default function ReEngagePage() {
         Surface past applicants and alumni who are now a strong fit for your open roles.
       </p>
 
-      <div className="bg-card border border-border rounded-lg p-6 mb-6">
+      <div className="glass border border-border rounded-lg p-6 mb-6">
         <p className="text-sm text-foreground mb-2 font-medium">How it works</p>
         <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
           Our AI reviews your talent pool against all open roles and flags candidates who weren&apos;t a fit before
@@ -52,7 +52,7 @@ export default function ReEngagePage() {
       </div>
 
       {ran && suggestions.length === 0 && (
-        <div className="bg-card border border-border rounded-lg p-6 text-center">
+        <div className="glass border border-border rounded-lg p-6 text-center">
           <p className="text-muted-foreground text-sm">
             {error
               ? "Something went wrong running the scan. Please try again."
@@ -62,7 +62,7 @@ export default function ReEngagePage() {
       )}
 
       {suggestions.map((s) => (
-        <div key={s.candidateId} className="bg-card border border-border rounded-lg p-4 mb-3">
+        <div key={s.candidateId} className="glass border border-border rounded-lg p-4 mb-3">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-sm font-bold">
               {s.name.charAt(0).toUpperCase()}

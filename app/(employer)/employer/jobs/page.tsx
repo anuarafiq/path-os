@@ -75,7 +75,7 @@ export default async function EmployerJobsPage() {
       </div>
 
       {!jobs?.length ? (
-        <div className="bg-card border border-border rounded-lg px-6 py-10 text-center">
+        <div className="glass border border-border rounded-lg px-6 py-10 text-center">
           <p className="text-muted-foreground text-sm mb-4">No jobs posted yet.</p>
           <Link
             href="/employer/jobs/new"
@@ -89,7 +89,7 @@ export default async function EmployerJobsPage() {
           {jobs.map((job) => (
             <div
               key={job.id}
-              className="bg-card border border-border rounded-lg px-5 py-4 flex items-center justify-between"
+              className="glass border border-border rounded-lg px-5 py-4 flex items-center justify-between"
             >
               <div className="flex flex-col gap-0.5 min-w-0">
                 <p className="font-medium text-sm text-foreground truncate">{job.title}</p>

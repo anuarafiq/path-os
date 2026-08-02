@@ -86,7 +86,7 @@ export default async function ApplicationsPage() {
             return (
               <div
                 key={row.id}
-                className="rounded-lg border border-[--border-subtle] bg-[--bg-surface] p-4"
+                className="rounded-lg border border-[--border-subtle] glass p-4"
               >
                 <div className="flex items-start justify-between gap-4">
                   <p className="font-medium text-foreground leading-snug">

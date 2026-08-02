@@ -144,7 +144,7 @@ export function CoachChat({
                   key={prompt}
                   type="button"
                   onClick={() => sendMessage(prompt)}
-                  className="text-left text-sm bg-card border border-border hover:border-brand/40 hover:bg-brand-subtle/20 px-4 py-3 rounded-lg transition-all text-muted-foreground hover:text-foreground"
+                  className="text-left text-sm glass border border-border hover:border-brand/40 hover:bg-brand-subtle/20 px-4 py-3 rounded-lg transition-all text-muted-foreground hover:text-foreground"
                 >
                   {prompt}
                 </button>
@@ -168,7 +168,7 @@ export function CoachChat({
                 "max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed",
                 msg.role === "user"
                   ? "bg-primary text-primary-foreground rounded-br-sm"
-                  : "bg-card border border-border text-foreground rounded-bl-sm"
+                  : "glass border border-border text-foreground rounded-bl-sm"
               )}
             >
               {msg.role === "user" ? (

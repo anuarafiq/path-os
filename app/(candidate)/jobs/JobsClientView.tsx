@@ -98,7 +98,7 @@ export default function JobsClientView({
   return (
     <div className="flex flex-col gap-4">
       {/* Filter bar */}
-      <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3">
+      <div className="rounded-lg border border-border glass p-4 flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row gap-2 sm:flex-wrap">
           <Input
             placeholder="Search jobs..."
@@ -170,14 +170,14 @@ export default function JobsClientView({
 
       {/* Job cards */}
       {filtered.length === 0 ? (
-        <div className="bg-card border border-border rounded-lg p-8 text-center">
+        <div className="glass border border-border rounded-lg p-8 text-center">
           <p className="text-muted-foreground text-sm">No jobs match your filters.</p>
           <button onClick={clearFilters} className="text-xs text-brand mt-2 hover:underline">Clear filters</button>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           {filtered.map((job) => (
-            <div key={job.id} className="bg-card border border-border rounded-lg p-4 hover:border-brand/40 transition-all">
+            <div key={job.id} className="glass border border-border rounded-lg p-4 hover:border-brand/40 transition-all">
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <h3 className="font-semibold text-sm text-foreground">{job.title}</h3>

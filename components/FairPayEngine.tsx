@@ -52,7 +52,7 @@ export function FairPayEngine({
       <p className="text-muted-foreground text-sm mb-8">Know your market value before your next negotiation.</p>
 
       {/* Inputs */}
-      <div className="bg-card border border-border rounded-lg p-5 mb-6">
+      <div className="glass border border-border rounded-lg p-5 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="flex flex-col gap-1.5">
             <Label>Role</Label>
@@ -107,7 +107,7 @@ export function FairPayEngine({
               { label: "Median", value: match.p50, desc: "Market rate" },
               { label: "75th percentile", value: match.p75, desc: "Top earners" },
             ].map((stat) => (
-              <div key={stat.label} className="bg-card border border-border rounded-lg px-4 py-4 text-center">
+              <div key={stat.label} className="glass border border-border rounded-lg px-4 py-4 text-center">
                 <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
                 <p className="text-brand tabular font-bold font-heading text-xl">
                   RM {(stat.value / 1000).toFixed(1)}k
@@ -118,7 +118,7 @@ export function FairPayEngine({
           </div>
 
           {/* Visual bar */}
-          <div className="bg-card border border-border rounded-lg p-4">
+          <div className="glass border border-border rounded-lg p-4">
             <div className="relative h-6 bg-secondary rounded-full overflow-hidden">
               <div
                 className="absolute left-0 top-0 h-full bg-brand/30 rounded-full"
@@ -144,12 +144,12 @@ export function FairPayEngine({
           </p>
         </div>
       ) : role ? (
-        <div className="bg-card border border-border rounded-lg p-6 text-center mb-6">
+        <div className="glass border border-border rounded-lg p-6 text-center mb-6">
           <p className="text-muted-foreground text-sm">No data for this combination yet.</p>
           <p className="text-xs text-muted-foreground mt-1">Try a different location or experience band.</p>
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-lg p-6 text-center mb-6">
+        <div className="glass border border-border rounded-lg p-6 text-center mb-6">
           <p className="text-muted-foreground text-sm">Select a role to see salary benchmarks.</p>
         </div>
       )}
@@ -166,7 +166,7 @@ export function FairPayEngine({
                 key={`${s.role}-${s.location}`}
                 type="button"
                 onClick={() => setRole(s.role)}
-                className="flex items-center justify-between bg-card border border-border hover:border-brand/40 rounded-lg px-4 py-3 text-sm transition-all group"
+                className="flex items-center justify-between glass border border-border hover:border-brand/40 rounded-lg px-4 py-3 text-sm transition-all group"
               >
                 <span className="text-foreground group-hover:text-brand transition-colors">{s.role}</span>
                 <span className="text-brand tabular font-medium">

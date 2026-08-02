@@ -40,7 +40,7 @@ export default async function PipelinePage() {
       </p>
 
       {serializedApps.length === 0 ? (
-        <div className="bg-card border border-border rounded-lg p-8 text-center">
+        <div className="glass border border-border rounded-lg p-8 text-center">
           <p className="text-muted-foreground text-sm">No applications yet — candidates will appear here once they apply.</p>
         </div>
       ) : (

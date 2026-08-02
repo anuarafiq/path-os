@@ -36,7 +36,7 @@ export default async function JobsPage() {
       <p className="text-muted-foreground text-sm mb-6">Open opportunities matched to your profile.</p>
 
       {allJobs.length === 0 ? (
-        <div className="bg-card border border-border rounded-lg p-8 text-center">
+        <div className="glass border border-border rounded-lg p-8 text-center">
           <p className="text-muted-foreground text-sm">No open jobs yet — check back soon.</p>
         </div>
       ) : (

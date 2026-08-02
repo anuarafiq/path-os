@@ -70,7 +70,7 @@ export default async function EmployerDashboard() {
         {stats.map((stat, i) => (
           <div
             key={stat.label}
-            className="bg-card border border-border rounded-lg px-5 py-4 animate-rise"
+            className="glass border border-border rounded-lg px-5 py-4 animate-rise"
             style={{ "--i": 2 + i } as React.CSSProperties}
           >
             <div className="w-8 h-8 rounded-md bg-brand-subtle flex items-center justify-center mb-3">
@@ -101,7 +101,7 @@ export default async function EmployerDashboard() {
                 "flex items-start gap-4 rounded-lg p-4 transition-all duration-200 group hover:-translate-y-0.5 active:scale-[0.98]",
                 a.highlight
                   ? "bg-gradient-coach shadow-card hover:brightness-105"
-                  : "bg-card border border-transparent hover:border-brand/40 hover:bg-brand-subtle/30"
+                  : "glass border border-transparent hover:border-brand/40 hover:bg-brand-subtle/30"
               )}
             >
               <a.icon

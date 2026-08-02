@@ -388,7 +388,7 @@ export function CareerPathExplorer({
       {/* Graph */}
       <div className="flex-1 relative">
         {/* Filter bar */}
-        <div className="absolute top-4 left-4 right-4 z-10 flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2 overflow-x-auto">
+        <div className="absolute top-4 left-4 right-4 z-10 flex items-center gap-2 glass border border-border rounded-lg px-3 py-2 overflow-x-auto">
           <span className="text-xs text-muted-foreground font-medium mr-1">Filter:</span>
           {["all", ...categories].map((cat) => (
             <button
@@ -424,7 +424,7 @@ export function CareerPathExplorer({
 
         {/* Path active chip */}
         {targetNodeId && targetNode && (
-          <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2 bg-card border border-brand/40 rounded-full px-3 py-1.5 shadow-lg text-xs font-medium">
+          <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2 glass border border-brand/40 rounded-full px-3 py-1.5 shadow-lg text-xs font-medium">
             <span className="w-2 h-2 rounded-full bg-brand animate-pulse shrink-0" />
             <span className="text-foreground">
               Path to <span className="text-brand">{targetNode.title}</span>
@@ -474,7 +474,7 @@ export function CareerPathExplorer({
       {/* Detail panel — fixed bottom sheet on mobile, side panel on md+ */}
       <aside
         className={cn(
-          "bg-card flex flex-col",
+          "glass flex flex-col",
           // Mobile: fixed bottom sheet
           "fixed bottom-0 left-0 right-0 z-20 border-t border-border rounded-t-2xl max-h-[60vh] overflow-y-auto transition-transform duration-300",
           // Desktop: static side panel in flex row
