@@ -54,7 +54,7 @@ export default function SaveToPoolButton({ candidateId, employerId, initialInPoo
       >
         {loading ? "Saving…" : "Save to pool"}
       </button>
-      {error && <p className="mt-1 text-xs text-[var(--danger)]">{error}</p>}
+      {error && <p className="mt-1 text-xs text-[var(--destructive)]">{error}</p>}
     </div>
   );
 }

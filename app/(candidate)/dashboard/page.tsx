@@ -1,38 +1,31 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionProfile, getCandidateProfile } from "@/lib/supabase/server";
 import Link from "next/link";
-import { Route, Bot, DollarSign, FolderKanban } from "lucide-react";
+import { Route, Bot, DollarSign, FolderKanban, Check, Circle, GraduationCap, Briefcase, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, profile: sessionProfile } = await getSessionProfile();
   if (!user) redirect("/login");
 
-  let { data: profile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
+  let profile = sessionProfile;
   if (!profile) {
+    const supabase = await createClient();
     const { data: newProfile } = await supabase
       .from("profiles")
       .insert({ user_id: user.id, role: "candidate" })
-      .select("id")
+      .select("id, role")
       .single();
     profile = newProfile;
   }
 
   if (!profile) redirect("/login");
 
-  const { data: candidate } = await supabase
-    .from("candidate_profiles")
-    .select("id, name, seeking, job_title, years_exp, location")
-    .eq("profile_id", profile.id)
-    .single();
+  const candidate = await getCandidateProfile(profile.id);
 
   if (!candidate) redirect("/onboarding");
+
+  const supabase = await createClient();
 
   const [
     { count: qualCount },
@@ -53,9 +46,9 @@ export default async function DashboardPage() {
   const completionScore = Math.round((completionItems.filter((i) => i.done).length / completionItems.length) * 100);
 
   const stats = [
-    { label: "Qualifications", value: qualCount ?? 0, accent: "text-brand" },
-    { label: "Work experiences", value: workCount ?? 0, accent: "text-accent-purple" },
-    { label: "Skills", value: skillCount ?? 0, accent: "text-accent-pink" },
+    { label: "Qualifications", value: qualCount ?? 0, icon: GraduationCap },
+    { label: "Work experiences", value: workCount ?? 0, icon: Briefcase },
+    { label: "Skills", value: skillCount ?? 0, icon: Sparkles },
   ];
 
   const quickActions = [
@@ -79,44 +72,59 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Profile completion — purple → pink gradient hero */}
-      <div
-        className="bg-gradient-hero rounded-xl p-5 mb-8 shadow-hero animate-rise"
-        style={{ "--i": 1 } as React.CSSProperties}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-heading font-semibold text-sm uppercase tracking-wider text-white/85 on-gradient">Profile strength</h2>
-          <span className="tabular font-semibold text-sm text-white on-gradient">{completionScore}%</span>
+      {/* Profile completion — purple → pink gradient hero, collapses to a flat strip once complete */}
+      {completionScore < 100 ? (
+        <div
+          className="bg-gradient-hero rounded-xl p-5 mb-8 shadow-hero animate-rise"
+          style={{ "--i": 1 } as React.CSSProperties}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-heading font-semibold text-sm uppercase tracking-wider text-white/85 on-gradient">Profile strength</h2>
+            <span className="tabular font-semibold text-sm text-white on-gradient">{completionScore}%</span>
+          </div>
+          <div className="h-1.5 bg-white/25 rounded-full mb-4 overflow-hidden">
+            <div
+              className="h-1.5 w-full bg-white rounded-full origin-left transition-transform duration-500"
+              style={{ transform: `scaleX(${completionScore / 100})` }}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {completionItems.map((item) => (
+              <div key={item.label} className="flex items-center gap-2 text-sm">
+                {item.done ? (
+                  <Check className="w-3.5 h-3.5 text-white shrink-0" aria-hidden="true" />
+                ) : (
+                  <Circle className="w-3.5 h-3.5 text-white/55 shrink-0" aria-hidden="true" />
+                )}
+                <span className={cn("on-gradient", item.done ? "text-white" : "text-white/70")}>
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="h-1.5 bg-white/25 rounded-full mb-4">
-          <div
-            className="h-1.5 bg-white rounded-full transition-all"
-            style={{ width: `${completionScore}%` }}
-          />
+      ) : (
+        <div
+          className="flex items-center gap-2 mb-8 px-1 text-sm text-muted-foreground animate-rise"
+          style={{ "--i": 1 } as React.CSSProperties}
+        >
+          <Check className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />
+          <span>Profile complete — all sections filled in</span>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          {completionItems.map((item) => (
-            <div key={item.label} className="flex items-center gap-2 text-sm">
-              <span className={item.done ? "text-white" : "text-white/55"}>
-                {item.done ? "✓" : "○"}
-              </span>
-              <span className={cn("on-gradient", item.done ? "text-white" : "text-white/70")}>
-                {item.label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {stats.map((stat, i) => (
           <div
             key={stat.label}
-            className="bg-card border border-border rounded-lg px-5 py-4 shadow-card animate-rise"
+            className="bg-card border border-border rounded-lg px-5 py-4 animate-rise"
             style={{ "--i": 2 + i } as React.CSSProperties}
           >
-            <p className={cn("tabular text-2xl font-bold font-heading mb-0.5", stat.accent)}>{stat.value}</p>
+            <div className="w-8 h-8 rounded-md bg-brand-subtle flex items-center justify-center mb-3">
+              <stat.icon className="w-4 h-4 text-brand" aria-hidden="true" />
+            </div>
+            <p className="tabular text-2xl font-bold font-heading mb-0.5 text-brand">{stat.value}</p>
             <p className="text-xs text-muted-foreground">{stat.label}</p>
           </div>
         ))}
@@ -139,15 +147,15 @@ export default async function DashboardPage() {
                 "flex items-start gap-4 rounded-lg p-4 transition-all duration-200 group hover:-translate-y-0.5 active:scale-[0.98]",
                 action.coach
                   ? "bg-gradient-coach shadow-card hover:brightness-105"
-                  : "bg-accent-amber-subtle border border-transparent hover:border-accent-amber/50"
+                  : "bg-card border border-transparent hover:border-brand/40 hover:bg-brand-subtle/30"
               )}
             >
               <action.icon
-                className={cn("w-5 h-5 mt-0.5 shrink-0", action.coach ? "text-white" : "text-accent-amber-ink")}
+                className={cn("w-5 h-5 mt-0.5 shrink-0", action.coach ? "text-white" : "text-brand")}
                 aria-hidden="true"
               />
               <div>
-                <p className={cn("font-medium text-sm", action.coach ? "text-white on-gradient" : "text-foreground")}>
+                <p className={cn("font-medium text-sm", action.coach ? "text-white on-gradient" : "text-foreground group-hover:text-brand transition-colors")}>
                   {action.label}
                 </p>
                 <p className={cn("text-xs mt-0.5", action.coach ? "text-white/85 on-gradient" : "text-muted-foreground")}>

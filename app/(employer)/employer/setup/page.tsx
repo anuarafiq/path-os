@@ -4,10 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
-
-const SELECT_CLASS =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring text-foreground";
 
 const INDUSTRIES = [
   "Technology",
@@ -86,12 +84,12 @@ export default function EmployerSetupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-8 flex flex-col gap-6">
+      <div className="w-full max-w-md bg-[var(--card)] border border-[var(--border)] rounded-xl p-8 flex flex-col gap-6">
         <div className="flex flex-col gap-1">
-          <h1 className="font-heading text-2xl font-bold text-[var(--text-primary)]">
+          <h1 className="font-heading text-2xl font-bold text-[var(--foreground)]">
             Set up your company profile
           </h1>
-          <p className="text-sm text-[var(--text-muted)]">This takes 30 seconds.</p>
+          <p className="text-sm text-[var(--muted-foreground)]">This takes 30 seconds.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -108,36 +106,34 @@ export default function EmployerSetupPage() {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="industry">Industry</Label>
-            <select
-              id="industry"
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
-              className={SELECT_CLASS}
-            >
-              <option value="">Select industry</option>
-              {INDUSTRIES.map((i) => (
-                <option key={i} value={i}>
-                  {i}
-                </option>
-              ))}
-            </select>
+            <Select value={industry} onValueChange={(v) => setIndustry(v ?? "")}>
+              <SelectTrigger id="industry" className="w-full">
+                <SelectValue placeholder="Select industry" />
+              </SelectTrigger>
+              <SelectContent>
+                {INDUSTRIES.map((i) => (
+                  <SelectItem key={i} value={i}>
+                    {i}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="size">Company size</Label>
-            <select
-              id="size"
-              value={size}
-              onChange={(e) => setSize(e.target.value)}
-              className={SELECT_CLASS}
-            >
-              <option value="">Select size</option>
-              {SIZES.map((s) => (
-                <option key={s} value={s}>
-                  {s} employees
-                </option>
-              ))}
-            </select>
+            <Select value={size} onValueChange={(v) => setSize(v ?? "")}>
+              <SelectTrigger id="size" className="w-full">
+                <SelectValue placeholder="Select size" />
+              </SelectTrigger>
+              <SelectContent>
+                {SIZES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s} employees
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -151,7 +147,7 @@ export default function EmployerSetupPage() {
             />
           </div>
 
-          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+          {error && <p className="text-sm text-[var(--destructive)]">{error}</p>}
 
           <Button type="submit" disabled={loading || !companyName.trim()} className="mt-2">
             {loading ? "Saving..." : "Continue"}

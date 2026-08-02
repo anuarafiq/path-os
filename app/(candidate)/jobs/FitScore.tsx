@@ -14,8 +14,8 @@ interface FitResult {
 
 function scoreColor(score: number): string {
   if (score >= 70) return "var(--success)";
-  if (score >= 40) return "var(--accent)";
-  return "var(--text-muted)";
+  if (score >= 40) return "var(--brand)";
+  return "var(--muted-foreground)";
 }
 
 export default function FitScore({ jobId, candidateId: _candidateId }: FitScoreProps) {
@@ -53,7 +53,7 @@ export default function FitScore({ jobId, candidateId: _candidateId }: FitScoreP
     <div className="flex items-start gap-2 mt-2">
       <span
         className="shrink-0 text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full border"
-        style={{ color, borderColor: color, background: `${color}18` }}
+        style={{ color, borderColor: color, background: `color-mix(in oklch, ${color} 15%, transparent)` }}
       >
         {result.score}% match
       </span>

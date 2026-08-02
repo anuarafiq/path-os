@@ -1,31 +1,22 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionProfile, getCandidateProfile } from "@/lib/supabase/server";
 import JobsClientView from "./JobsClientView";
 
 export default async function JobsPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+
+  const [{ data: jobs }, { user, profile }] = await Promise.all([
+    supabase
+      .from("jobs")
+      .select("*, employer_profiles(company_name)")
+      .eq("status", "open")
+      .order("created_at", { ascending: false }),
+    getSessionProfile(),
+  ]);
+
   if (!user) redirect("/login");
 
-  const { data: jobs } = await supabase
-    .from("jobs")
-    .select("*, employer_profiles(company_name)")
-    .eq("status", "open")
-    .order("created_at", { ascending: false });
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  const { data: candidateProfile } = profile
-    ? await supabase
-        .from("candidate_profiles")
-        .select("id")
-        .eq("profile_id", profile.id)
-        .single()
-    : { data: null };
+  const candidateProfile = profile ? await getCandidateProfile(profile.id) : null;
 
   const { data: existingApplications } = candidateProfile
     ? await supabase

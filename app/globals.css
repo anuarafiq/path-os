@@ -102,7 +102,8 @@
   --accent-mint-subtle:   oklch(0.68 0.13 165 / 0.14);
 
   --gradient-hero:  linear-gradient(135deg, oklch(0.55 0.19 300), oklch(0.62 0.20 353));
-  --gradient-coach: linear-gradient(120deg, oklch(0.62 0.145 196), oklch(0.55 0.19 300) 45%, oklch(0.62 0.20 353) 75%, oklch(0.72 0.15 90));
+  /* Coach gradient extends the hero gradient backward with brand cyan — same purple/pink core, not a separate palette */
+  --gradient-coach: linear-gradient(120deg, oklch(0.62 0.145 196), oklch(0.55 0.19 300) 50%, oklch(0.62 0.20 353) 100%);
 
   --radius: 0.5rem;
 
@@ -167,7 +168,7 @@
   --accent-mint-subtle:   oklch(0.74 0.13 165 / 0.16);
 
   --gradient-hero:  linear-gradient(135deg, oklch(0.68 0.19 300), oklch(0.72 0.19 353));
-  --gradient-coach: linear-gradient(120deg, oklch(0.78 0.145 196), oklch(0.68 0.19 300) 45%, oklch(0.72 0.19 353) 75%, oklch(0.78 0.15 90));
+  --gradient-coach: linear-gradient(120deg, oklch(0.78 0.145 196), oklch(0.68 0.19 300) 50%, oklch(0.72 0.19 353) 100%);
 }
 
 @layer base {

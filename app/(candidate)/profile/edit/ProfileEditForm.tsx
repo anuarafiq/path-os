@@ -137,7 +137,7 @@ export function ProfileEditForm({ candidate, userId }: { candidate: Candidate; u
 
       <div className="flex flex-col gap-2">
         <Label>I&apos;m looking for</Label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {([
             { value: "internship", label: "Internship", desc: "Student or recent grad" },
             { value: "full_time", label: "Full-time role", desc: "Permanent or contract" },

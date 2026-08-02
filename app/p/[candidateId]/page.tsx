@@ -58,11 +58,11 @@ export default async function PublicPortfolioPage({ params }: Props) {
   }, {});
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg-base)" }}>
+    <div className="min-h-screen" style={{ background: "var(--background)" }}>
       {/* Minimal nav */}
-      <header className="border-b" style={{ borderColor: "var(--border-subtle)" }}>
+      <header className="border-b" style={{ borderColor: "var(--border)" }}>
         <div className="max-w-3xl mx-auto px-4 md:px-8 py-4">
-          <a href="/" className="font-heading font-bold text-sm" style={{ color: "var(--accent)" }}>
+          <a href="/" className="font-heading font-bold text-sm" style={{ color: "var(--brand)" }}>
             Path OS
           </a>
         </div>
@@ -72,10 +72,10 @@ export default async function PublicPortfolioPage({ params }: Props) {
         {/* Header */}
         <div className="flex items-start justify-between mb-8">
           <div>
-            <h1 className="font-heading text-3xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>
+            <h1 className="font-heading text-3xl font-bold mb-1" style={{ color: "var(--foreground)" }}>
               {candidate.name}
             </h1>
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
               {candidate.seeking === "internship" ? "Seeking internship" : candidate.job_title ?? "Open to opportunities"}
               {candidate.location ? ` · ${candidate.location}` : ""}
             </p>
@@ -86,7 +86,7 @@ export default async function PublicPortfolioPage({ params }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs hover:opacity-80"
-                  style={{ color: "var(--accent)" }}
+                  style={{ color: "var(--brand)" }}
                 >
                   GitHub ↗
                 </a>
@@ -97,7 +97,7 @@ export default async function PublicPortfolioPage({ params }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs hover:opacity-80"
-                  style={{ color: "var(--accent)" }}
+                  style={{ color: "var(--brand)" }}
                 >
                   LinkedIn ↗
                 </a>
@@ -106,14 +106,14 @@ export default async function PublicPortfolioPage({ params }: Props) {
           </div>
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold font-heading shrink-0"
-            style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}
+            style={{ background: "var(--brand-subtle)", color: "var(--brand)" }}
           >
             {candidate.name.charAt(0).toUpperCase()}
           </div>
         </div>
 
         {candidate.bio && (
-          <p className="leading-relaxed mb-8 max-w-prose" style={{ color: "var(--text-primary)" }}>
+          <p className="leading-relaxed mb-8 max-w-prose" style={{ color: "var(--foreground)" }}>
             {candidate.bio}
           </p>
         )}
@@ -121,25 +121,25 @@ export default async function PublicPortfolioPage({ params }: Props) {
         {/* Education */}
         {(quals ?? []).filter((q) => q.type === "education").length > 0 && (
           <section className="mb-8">
-            <h2 className="font-heading font-semibold text-xs uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)" }}>
+            <h2 className="font-heading font-semibold text-xs uppercase tracking-wider mb-4" style={{ color: "var(--muted-foreground)" }}>
               Education
             </h2>
             <div className="flex flex-col gap-3">
               {quals!.filter((q) => q.type === "education").map((q) => (
-                <div key={q.id} className="flex items-start justify-between py-3 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+                <div key={q.id} className="flex items-start justify-between py-3 border-b" style={{ borderColor: "var(--border)" }}>
                   <div>
-                    <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>{q.title}</p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                    <p className="font-medium text-sm" style={{ color: "var(--foreground)" }}>{q.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
                       {q.institution}{q.field_of_study ? ` · ${q.field_of_study}` : ""}
                     </p>
                   </div>
                   <div className="text-right shrink-0 ml-4">
-                    <p className="text-xs tabular-nums" style={{ color: "var(--text-muted)" }}>
+                    <p className="text-xs tabular-nums" style={{ color: "var(--muted-foreground)" }}>
                       {q.start_date ? new Date(q.start_date).getFullYear() : ""}
                       {q.is_current ? "–Present" : q.end_date ? `–${new Date(q.end_date).getFullYear()}` : ""}
                     </p>
                     {q.grade && (
-                      <p className="text-xs font-medium mt-0.5 tabular-nums" style={{ color: "var(--accent)" }}>{q.grade}</p>
+                      <p className="text-xs font-medium mt-0.5 tabular-nums" style={{ color: "var(--brand)" }}>{q.grade}</p>
                     )}
                   </div>
                 </div>
@@ -151,31 +151,31 @@ export default async function PublicPortfolioPage({ params }: Props) {
         {/* Certificates */}
         {(quals ?? []).filter((q) => q.type === "certificate").length > 0 && (
           <section className="mb-8">
-            <h2 className="font-heading font-semibold text-xs uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)" }}>
+            <h2 className="font-heading font-semibold text-xs uppercase tracking-wider mb-4" style={{ color: "var(--muted-foreground)" }}>
               Certificates
             </h2>
             <div className="flex flex-col gap-3">
               {quals!.filter((q) => q.type === "certificate").map((q) => {
                 const isRecent = q.end_date && Date.now() - new Date(q.end_date).getTime() < 90 * 24 * 60 * 60 * 1000;
                 return (
-                  <div key={q.id} className="flex items-start justify-between py-3 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+                  <div key={q.id} className="flex items-start justify-between py-3 border-b" style={{ borderColor: "var(--border)" }}>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>{q.title}</p>
+                        <p className="font-medium text-sm" style={{ color: "var(--foreground)" }}>{q.title}</p>
                         {isRecent && (
-                          <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                          <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "var(--brand-subtle)", color: "var(--brand)" }}>
                             Recent
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{q.institution}</p>
+                        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{q.institution}</p>
                         {q.credential_url && (
                           <>
-                            <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                            <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: "var(--brand-subtle)", color: "var(--brand)" }}>
                               Coursera
                             </span>
-                            <a href={q.credential_url} target="_blank" rel="noopener noreferrer" className="text-xs hover:opacity-80" style={{ color: "var(--accent)" }}>
+                            <a href={q.credential_url} target="_blank" rel="noopener noreferrer" className="text-xs hover:opacity-80" style={{ color: "var(--brand)" }}>
                               Verify ↗
                             </a>
                           </>
@@ -184,7 +184,7 @@ export default async function PublicPortfolioPage({ params }: Props) {
                     </div>
                     <div className="text-right shrink-0 ml-4">
                       {q.end_date && (
-                        <p className="text-xs tabular-nums" style={{ color: "var(--text-muted)" }}>
+                        <p className="text-xs tabular-nums" style={{ color: "var(--muted-foreground)" }}>
                           {new Date(q.end_date).getFullYear()}
                         </p>
                       )}
@@ -199,28 +199,28 @@ export default async function PublicPortfolioPage({ params }: Props) {
         {/* Work Experience */}
         {(work ?? []).length > 0 && (
           <section className="mb-8">
-            <h2 className="font-heading font-semibold text-xs uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)" }}>
+            <h2 className="font-heading font-semibold text-xs uppercase tracking-wider mb-4" style={{ color: "var(--muted-foreground)" }}>
               Work Experience
             </h2>
             <div className="flex flex-col gap-4">
               {work!.map((w) => (
-                <div key={w.id} className="py-3 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+                <div key={w.id} className="py-3 border-b" style={{ borderColor: "var(--border)" }}>
                   <div className="flex items-start justify-between mb-1">
                     <div>
-                      <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>{w.title}</p>
-                      <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                      <p className="font-medium text-sm" style={{ color: "var(--foreground)" }}>{w.title}</p>
+                      <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
                         {w.company}{w.location ? ` · ${w.location}` : ""}{" · "}
                         <span className="capitalize">{w.employment_type.replace("_", "-")}</span>
                       </p>
                     </div>
-                    <p className="text-xs tabular-nums shrink-0 ml-4" style={{ color: "var(--text-muted)" }}>
+                    <p className="text-xs tabular-nums shrink-0 ml-4" style={{ color: "var(--muted-foreground)" }}>
                       {new Date(w.start_date).toLocaleDateString("en-MY", { month: "short", year: "numeric" })}
                       {" – "}
                       {w.is_current ? "Present" : w.end_date ? new Date(w.end_date).toLocaleDateString("en-MY", { month: "short", year: "numeric" }) : ""}
                     </p>
                   </div>
                   {w.description && (
-                    <p className="text-sm leading-relaxed mt-1.5 max-w-prose" style={{ color: "var(--text-secondary)" }}>
+                    <p className="text-sm leading-relaxed mt-1.5 max-w-prose" style={{ color: "var(--muted-foreground)" }}>
                       {w.description}
                     </p>
                   )}
@@ -233,22 +233,22 @@ export default async function PublicPortfolioPage({ params }: Props) {
         {/* Skills */}
         {Object.keys(skillsByCategory).length > 0 && (
           <section className="mb-8">
-            <h2 className="font-heading font-semibold text-xs uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)" }}>
+            <h2 className="font-heading font-semibold text-xs uppercase tracking-wider mb-4" style={{ color: "var(--muted-foreground)" }}>
               Skills
             </h2>
             <div className="flex flex-col gap-4">
               {Object.entries(skillsByCategory).map(([category, categorySkills]) => (
                 <div key={category}>
-                  <p className="text-xs font-medium mb-2" style={{ color: "var(--text-secondary)" }}>{category}</p>
+                  <p className="text-xs font-medium mb-2" style={{ color: "var(--muted-foreground)" }}>{category}</p>
                   <div className="flex flex-wrap gap-2">
                     {categorySkills.map((skill) => (
                       <span
                         key={skill.name}
                         className="text-xs px-2.5 py-1 rounded-full border"
-                        style={{ background: "var(--bg-surface)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
+                        style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--foreground)" }}
                       >
                         {skill.name}
-                        <span style={{ color: "var(--text-muted)" }} className="ml-1">· {skill.level}</span>
+                        <span style={{ color: "var(--muted-foreground)" }} className="ml-1">· {skill.level}</span>
                       </span>
                     ))}
                   </div>
@@ -261,28 +261,28 @@ export default async function PublicPortfolioPage({ params }: Props) {
         {/* Projects */}
         {(portfolio ?? []).length > 0 && (
           <section className="mb-8">
-            <h2 className="font-heading font-semibold text-xs uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)" }}>
+            <h2 className="font-heading font-semibold text-xs uppercase tracking-wider mb-4" style={{ color: "var(--muted-foreground)" }}>
               Projects
             </h2>
             <div className="flex flex-col gap-3">
               {portfolio!.map((item) => (
-                <div key={item.id} className="py-3 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+                <div key={item.id} className="py-3 border-b" style={{ borderColor: "var(--border)" }}>
                   <div className="flex items-start justify-between mb-1">
-                    <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>{item.title}</p>
+                    <p className="font-medium text-sm" style={{ color: "var(--foreground)" }}>{item.title}</p>
                     {item.url && (
                       <a
                         href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs hover:opacity-80 shrink-0 ml-4"
-                        style={{ color: "var(--accent)" }}
+                        style={{ color: "var(--brand)" }}
                       >
                         View ↗
                       </a>
                     )}
                   </div>
                   {item.description && (
-                    <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{item.description}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{item.description}</p>
                   )}
                   {(item.tags ?? []).length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
@@ -290,7 +290,7 @@ export default async function PublicPortfolioPage({ params }: Props) {
                         <span
                           key={tag}
                           className="text-xs px-2 py-0.5 rounded"
-                          style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}
+                          style={{ background: "var(--secondary)", color: "var(--muted-foreground)" }}
                         >
                           {tag}
                         </span>
@@ -304,13 +304,13 @@ export default async function PublicPortfolioPage({ params }: Props) {
         )}
       </main>
 
-      <footer className="border-t py-6" style={{ borderColor: "var(--border-subtle)" }}>
+      <footer className="border-t py-6" style={{ borderColor: "var(--border)" }}>
         <div className="max-w-3xl mx-auto px-4 md:px-8 flex items-center justify-between">
-          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
             Powered by{" "}
-            <a href="/" className="hover:opacity-80" style={{ color: "var(--accent)" }}>Path OS</a>
+            <a href="/" className="hover:opacity-80" style={{ color: "var(--brand)" }}>Path OS</a>
           </p>
-          <a href="/signup" className="text-xs hover:opacity-80" style={{ color: "var(--accent)" }}>
+          <a href="/signup" className="text-xs hover:opacity-80" style={{ color: "var(--brand)" }}>
             Build your profile →
           </a>
         </div>

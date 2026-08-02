@@ -12,27 +12,20 @@ After completing any feature, update `.claude/ARCHITECTURE.md` under the relevan
 
 ## Design
 
-Dark mode by default, with a light mode toggle (`next-themes`, see Gotchas). Amber/gold accent on deep navy-black in dark mode. Salary/metric numbers feel like a trading terminal.
+Light mode by default, with a full dark mode via toggle (`next-themes`, see Gotchas). Cyan brand accent, with a purple/pink/amber/mint secondary family for gradients and per-context highlights. Tabular-nums for all salary/numeric data. Full context in [.impeccable.md](../.impeccable.md).
 
-Typography: **Bricolage Grotesque** (headings) + **Geist Sans** (body). Tabular-nums for all salary/numeric data.
+Typography: **Bricolage Grotesque** (headings) + **Geist Sans** (body).
 
-**Hard bans:** no side-stripe card borders, no gradient text.
+**Hard bans:** no side-stripe card borders, no gradient text. Only two gradient treatments exist system-wide (hero summary cards, and the single highest-emphasis AI Coach action) — don't add a third combination, and don't assign per-item accent colors arbitrarily (one rule per color, see `.impeccable.md` Design Principle 3).
 
 ### Color Tokens
+Real values live in `app/globals.css:59-186` (`:root` = light/default, `.dark` = dark). Summary:
 ```css
---bg-base:        oklch(0.13 0.012 258);
---bg-surface:     oklch(0.17 0.012 258);
---bg-elevated:    oklch(0.21 0.013 258);
---border-subtle:  oklch(0.26 0.014 258);
---border-strong:  oklch(0.35 0.016 258);
---text-primary:   oklch(0.94 0.006 258);
---text-secondary: oklch(0.62 0.012 258);
---text-muted:     oklch(0.44 0.010 258);
---accent:         oklch(0.82 0.14 72);
---accent-dim:     oklch(0.68 0.11 72);
---accent-subtle:  oklch(0.82 0.14 72 / 0.12);
---success:        oklch(0.76 0.14 148);
---danger:         oklch(0.66 0.18 22);
+/* Light (default) */
+--background: oklch(0.973 0.002 236);  --brand: oklch(0.62 0.145 196);  /* cyan */
+--accent-purple: oklch(0.55 0.19 300); --accent-pink: oklch(0.62 0.20 353);
+--accent-amber: oklch(0.78 0.16 95);   --accent-mint: oklch(0.68 0.13 165);
+--success: oklch(0.55 0.15 152);       --destructive: oklch(0.55 0.19 22);
 ```
 
 ### Typography Scale

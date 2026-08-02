@@ -93,7 +93,7 @@ export default function PipelineBoard({ initialApps, jobs }: Props) {
                       <p className="text-xs text-muted-foreground">{app.candidate?.job_title ?? "—"}</p>
                       {job && <p className="text-xs text-brand mt-1">{job.title}</p>}
                       {hasError && (
-                        <p className="text-xs mt-1" style={{ color: "var(--danger)" }}>
+                        <p className="text-xs mt-1" style={{ color: "var(--destructive)" }}>
                           Update failed
                         </p>
                       )}
@@ -123,7 +123,7 @@ export default function PipelineBoard({ initialApps, jobs }: Props) {
                             onClick={() => moveCard(app.id, "rejected")}
                             disabled={isLoading}
                             className="text-xs px-1.5 py-0.5 rounded text-muted-foreground hover:bg-elevated disabled:opacity-40 transition-colors"
-                            style={{ color: "var(--danger)" }}
+                            style={{ color: "var(--destructive)" }}
                             title="Reject"
                           >
                             ✕

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResumeUpload } from "@/components/ResumeUpload";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
@@ -278,7 +279,7 @@ export default function OnboardingPage() {
               placeholder="Paste your CV or resume text here..."
               rows={12}
             />
-            {importError && <p className="text-xs text-[var(--danger)]">{importError}</p>}
+            {importError && <p className="text-xs text-[var(--destructive)]">{importError}</p>}
             <div className="flex gap-3 justify-end">
               <Button variant="ghost" onClick={() => setShowImport(false)}>
                 Skip, fill manually
@@ -304,10 +305,10 @@ export default function OnboardingPage() {
             </span>
             <span className="text-xs text-brand font-medium tabular">{Math.round(progress)}%</span>
           </div>
-          <div className="h-1 bg-secondary rounded-full">
+          <div className="h-1 bg-secondary rounded-full overflow-hidden">
             <div
-              className="h-1 bg-brand rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
+              className="h-1 w-full bg-brand rounded-full origin-left transition-transform duration-500"
+              style={{ transform: `scaleX(${progress / 100})` }}
             />
           </div>
           <h1 className="font-heading text-2xl font-semibold mt-4">{STEPS[step]}</h1>
@@ -349,7 +350,7 @@ export default function OnboardingPage() {
           <div className="flex flex-col gap-6">
             <div>
               <p className="text-sm text-muted-foreground mb-3">I&apos;m looking for</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {([
                   { value: "internship", label: "Internship", desc: "I'm a student or recent grad seeking an internship" },
                   { value: "full_time", label: "Full-time role", desc: "I'm looking for a permanent or contract position" },
@@ -512,16 +513,20 @@ export default function OnboardingPage() {
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <Label>Employment type</Label>
-                        <select
+                        <Select
                           value={w.employment_type}
-                          onChange={(e) => setWorkExps((p) => p.map((x, idx) => idx === i ? { ...x, employment_type: e.target.value as WorkEntry["employment_type"] } : x))}
-                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                          onValueChange={(v) => setWorkExps((p) => p.map((x, idx) => idx === i ? { ...x, employment_type: v as WorkEntry["employment_type"] } : x))}
                         >
-                          <option value="full_time">Full-time</option>
-                          <option value="part_time">Part-time</option>
-                          <option value="internship">Internship</option>
-                          <option value="contract">Contract</option>
-                        </select>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="full_time">Full-time</SelectItem>
+                            <SelectItem value="part_time">Part-time</SelectItem>
+                            <SelectItem value="internship">Internship</SelectItem>
+                            <SelectItem value="contract">Contract</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <Label>Start date *</Label>
@@ -558,7 +563,9 @@ export default function OnboardingPage() {
         {/* Step 4: Skills */}
         {step === 4 && (
           <div className="flex flex-col gap-4">
+            <Label htmlFor="skill-search" className="sr-only">Search skills</Label>
             <Input
+              id="skill-search"
               value={skillSearch}
               onChange={(e) => setSkillSearch(e.target.value)}
               placeholder="Search skills (e.g. Python, React, Product Management)..."
@@ -575,13 +582,21 @@ export default function OnboardingPage() {
                       <select
                         value={s.level}
                         onChange={(e) => setSkillLevel(s.id, e.target.value as "beginner" | "mid" | "senior")}
-                        className="text-xs text-brand bg-transparent border-none outline-none cursor-pointer"
+                        aria-label={`Skill level for ${skill.name}`}
+                        className="text-xs text-brand bg-transparent border-none rounded-sm cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                       >
                         <option value="beginner">Beginner</option>
                         <option value="mid">Mid</option>
                         <option value="senior">Senior</option>
                       </select>
-                      <button type="button" onClick={() => toggleSkill(s.id)} className="text-brand/60 hover:text-brand ml-0.5 text-xs">×</button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSkill(s.id)}
+                        aria-label={`Remove ${skill.name}`}
+                        className="flex items-center justify-center w-6 h-6 -mr-1 text-brand/60 hover:text-brand hover:bg-brand/10 text-xs rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                      >
+                        ×
+                      </button>
                     </div>
                   );
                 })}

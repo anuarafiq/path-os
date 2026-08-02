@@ -656,6 +656,7 @@ export function CareerPathExplorer({
               <button
                 type="button"
                 onClick={() => setSelectedNode(null)}
+                aria-label="Close details"
                 className="text-muted-foreground hover:text-foreground transition-colors text-lg leading-none"
               >
                 ×

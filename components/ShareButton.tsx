@@ -16,7 +16,7 @@ export default function ShareButton({ candidateId }: { candidateId: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="text-xs px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:border-border-strong transition-colors"
+      className="text-xs px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:border-brand/40 transition-colors"
     >
       {copied ? "Copied!" : "Share ↗"}
     </button>

@@ -152,7 +152,7 @@ export default function JobsClientView({
                   className={`text-xs px-2.5 py-0.5 rounded-full border transition-colors ${
                     active
                       ? "bg-brand/15 border-brand/50 text-brand"
-                      : "bg-secondary border-border text-muted-foreground hover:border-border-strong"
+                      : "bg-secondary border-border text-muted-foreground hover:border-brand/40"
                   }`}
                 >
                   {skill}

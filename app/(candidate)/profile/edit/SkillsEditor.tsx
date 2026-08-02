@@ -4,6 +4,8 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Level = "beginner" | "mid" | "senior";
 
@@ -83,13 +85,19 @@ export function SkillsEditor({ candidateId, initialSkills }: { candidateId: stri
               <select
                 value={s.level}
                 onChange={(e) => handleLevelChange(s.id, e.target.value as Level)}
-                className="text-xs text-brand bg-transparent border-none outline-none cursor-pointer"
+                aria-label={`Skill level for ${s.skills?.name}`}
+                className="text-xs text-brand bg-transparent border-none rounded-sm cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="beginner">Beginner</option>
                 <option value="mid">Mid</option>
                 <option value="senior">Senior</option>
               </select>
-              <button type="button" onClick={() => handleDelete(s.id)} className="text-brand/60 hover:text-brand ml-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => handleDelete(s.id)}
+                aria-label={`Remove ${s.skills?.name}`}
+                className="flex items-center justify-center w-6 h-6 -mr-1 text-brand/60 hover:text-brand hover:bg-brand/10 text-xs rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
                 ×
               </button>
             </div>
@@ -99,22 +107,26 @@ export function SkillsEditor({ candidateId, initialSkills }: { candidateId: stri
 
       <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
         <div className="flex-1">
+          <Label htmlFor="new-skill-name" className="sr-only">Skill name</Label>
           <Input
+            id="new-skill-name"
             value={skillName}
             onChange={(e) => setSkillName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="Python, React, Product Management..."
           />
         </div>
-        <select
-          value={skillLevel}
-          onChange={(e) => setSkillLevel(e.target.value as Level)}
-          className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
-        >
-          <option value="beginner">Beginner</option>
-          <option value="mid">Mid</option>
-          <option value="senior">Senior</option>
-        </select>
+        <Label htmlFor="new-skill-level" className="sr-only">Skill level</Label>
+        <Select value={skillLevel} onValueChange={(v) => setSkillLevel(v as Level)}>
+          <SelectTrigger id="new-skill-level">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="beginner">Beginner</SelectItem>
+            <SelectItem value="mid">Mid</SelectItem>
+            <SelectItem value="senior">Senior</SelectItem>
+          </SelectContent>
+        </Select>
         <Button type="button" onClick={handleAdd} disabled={saving || !skillName.trim()}>
           {saving ? "Adding..." : "Add"}
         </Button>

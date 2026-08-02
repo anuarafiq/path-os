@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
-
-const SELECT_CLASS =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring text-foreground";
 
 export default function NewJobPage() {
   const [title, setTitle] = useState("");
@@ -122,18 +120,18 @@ export default function NewJobPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-8 flex flex-col gap-6">
+      <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-8 flex flex-col gap-6">
         <div className="flex flex-col gap-1">
-          <h1 className="font-heading text-2xl font-bold text-[var(--text-primary)]">
+          <h1 className="font-heading text-2xl font-bold text-[var(--foreground)]">
             Post a new job
           </h1>
-          <p className="text-sm text-[var(--text-muted)]">
+          <p className="text-sm text-[var(--muted-foreground)]">
             Fields marked * are required.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] -mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)] -mb-2">
             Role details
           </p>
 
@@ -159,23 +157,20 @@ export default function NewJobPage() {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="employment-type">Employment type *</Label>
-            <select
-              id="employment-type"
-              value={employmentType}
-              onChange={(e) => setEmploymentType(e.target.value)}
-              className={SELECT_CLASS}
-            >
-              <option value="" disabled>
-                Select type
-              </option>
-              <option value="full_time">Full-time</option>
-              <option value="part_time">Part-time</option>
-              <option value="internship">Internship</option>
-              <option value="contract">Contract</option>
-            </select>
+            <Select value={employmentType} onValueChange={(v) => setEmploymentType(v ?? "")}>
+              <SelectTrigger id="employment-type" className="w-full">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="full_time">Full-time</SelectItem>
+                <SelectItem value="part_time">Part-time</SelectItem>
+                <SelectItem value="internship">Internship</SelectItem>
+                <SelectItem value="contract">Contract</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] -mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)] -mb-2">
             Compensation
           </p>
 
@@ -206,7 +201,7 @@ export default function NewJobPage() {
             </div>
           </div>
 
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] -mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)] -mb-2">
             Additional info
           </p>
 
@@ -262,7 +257,7 @@ export default function NewJobPage() {
             />
           </div>
 
-          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+          {error && <p className="text-sm text-[var(--destructive)]">{error}</p>}
 
           <Button type="submit" disabled={!canSubmit} className="mt-1">
             {loading ? "Posting…" : "Post job"}

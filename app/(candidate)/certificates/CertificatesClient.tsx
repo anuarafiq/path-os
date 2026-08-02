@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { Database } from "@/types/database";
 
 type Qualification = Database["public"]["Tables"]["qualifications"]["Row"];
@@ -217,7 +219,7 @@ export function CertificatesClient({ certs: initialCerts, candidateId, existingS
                 <button
                   type="button"
                   onClick={() => handleDelete(cert.id)}
-                  className="text-xs text-muted-foreground hover:text-danger transition-colors ml-4 shrink-0 mt-0.5"
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors ml-4 shrink-0 mt-0.5"
                 >
                   Remove
                 </button>
@@ -236,13 +238,15 @@ export function CertificatesClient({ certs: initialCerts, candidateId, existingS
         <div>
           <p className="text-sm font-medium text-foreground mb-3">Add from Coursera</p>
           <div className="flex gap-2">
-            <input
+            <Label htmlFor="coursera-url" className="sr-only">Coursera verification URL</Label>
+            <Input
+              id="coursera-url"
               type="url"
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleFetch()}
               placeholder="https://www.coursera.org/account/accomplishments/verify/..."
-              className="flex-1 bg-secondary border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand min-w-0"
+              className="flex-1 min-w-0"
             />
             <button
               type="button"
@@ -253,7 +257,7 @@ export function CertificatesClient({ certs: initialCerts, candidateId, existingS
               Fetch Details
             </button>
           </div>
-          {fetchError && <p className="text-xs text-danger mt-2">{fetchError}</p>}
+          {fetchError && <p className="text-xs text-destructive mt-2">{fetchError}</p>}
         </div>
       )}
 
@@ -275,41 +279,41 @@ export function CertificatesClient({ certs: initialCerts, candidateId, existingS
             </p>
           )}
           <div className="flex flex-col gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Certificate name *</label>
-              <input
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="cert-title" className="text-xs text-muted-foreground">Certificate name *</Label>
+              <Input
+                id="cert-title"
                 type="text"
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
-                className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:border-brand"
               />
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Issued by *</label>
-              <input
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="cert-institution" className="text-xs text-muted-foreground">Issued by *</Label>
+              <Input
+                id="cert-institution"
                 type="text"
                 value={formInstitution}
                 onChange={(e) => setFormInstitution(e.target.value)}
-                className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:border-brand"
               />
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Completion date</label>
-              <input
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="cert-date" className="text-xs text-muted-foreground">Completion date</Label>
+              <Input
+                id="cert-date"
                 type="month"
                 value={formDate}
                 onChange={(e) => setFormDate(e.target.value)}
-                className="bg-secondary border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:border-brand"
               />
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Credential URL</label>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs text-muted-foreground">Credential URL</Label>
               <p className="text-xs text-muted-foreground bg-secondary border border-border rounded-md px-3 py-2 truncate">
                 {extracted.credential_url}
               </p>
             </div>
           </div>
-          {fetchError && <p className="text-xs text-danger mt-3">{fetchError}</p>}
+          {fetchError && <p className="text-xs text-destructive mt-3">{fetchError}</p>}
           <div className="flex gap-3 mt-5">
             <button
               type="button"

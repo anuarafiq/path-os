@@ -82,7 +82,7 @@ export default function ApplyButton({ jobId, candidateId, initialApplied }: Appl
 
   if (step === "generating") {
     return (
-      <div className="mt-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">
+      <div className="mt-3 flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
         <span className="inline-block w-3 h-3 rounded-full bg-[var(--brand)] animate-pulse" />
         Crafting your cover note…
       </div>
@@ -91,15 +91,15 @@ export default function ApplyButton({ jobId, candidateId, initialApplied }: Appl
 
   return (
     <div className="mt-4 flex flex-col gap-2">
-      <p className="text-xs text-[var(--text-secondary)] font-medium">Cover note</p>
+      <p className="text-xs text-[var(--muted-foreground)] font-medium">Cover note</p>
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={6}
         placeholder="Add a cover note… (optional)"
-        className="w-full text-xs bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-md px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-y focus:outline-none focus:border-[var(--brand-dim)]"
+        className="w-full text-xs bg-[var(--secondary)] border border-[var(--border)] rounded-md px-3 py-2 text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] resize-y focus:outline-none focus:border-[var(--brand-dim)]"
       />
-      {error && <p className="text-xs text-[var(--danger)]">{error}</p>}
+      {error && <p className="text-xs text-[var(--destructive)]">{error}</p>}
       <div className="flex items-center gap-2">
         <button
           onClick={() => submitApplication(note)}
@@ -111,14 +111,14 @@ export default function ApplyButton({ jobId, candidateId, initialApplied }: Appl
         <button
           onClick={() => submitApplication("")}
           disabled={step === "submitting"}
-          className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-50"
+          className="text-xs text-[var(--muted-foreground)] hover:text-[var(--muted-foreground)] transition-colors disabled:opacity-50"
         >
           Skip note
         </button>
         <button
           onClick={() => setStep("idle")}
           disabled={step === "submitting"}
-          className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-50 ml-auto"
+          className="text-xs text-[var(--muted-foreground)] hover:text-[var(--muted-foreground)] transition-colors disabled:opacity-50 ml-auto"
         >
           Cancel
         </button>

@@ -1,16 +1,16 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionProfile, getEmployerProfile } from "@/lib/supabase/server";
 import PipelineBoard from "./PipelineBoard";
 
 export default async function PipelinePage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, profile } = await getSessionProfile();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase.from("profiles").select("id").eq("user_id", user.id).single();
-  const { data: employer } = await supabase.from("employer_profiles").select("id").eq("profile_id", profile?.id ?? "").single();
+  const employer = profile ? await getEmployerProfile(profile.id) : null;
 
   if (!employer) redirect("/employer/dashboard");
+
+  const supabase = await createClient();
 
   const { data: jobs } = await supabase
     .from("jobs")

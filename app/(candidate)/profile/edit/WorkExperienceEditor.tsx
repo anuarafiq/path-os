@@ -6,13 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Database } from "@/types/database";
 
 type WorkExperience = Database["public"]["Tables"]["work_experiences"]["Row"];
 type EmploymentType = WorkExperience["employment_type"];
-
-const SELECT_CLASS =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring text-foreground";
 
 export function WorkExperienceEditor({ candidateId, initialItems }: { candidateId: string; initialItems: WorkExperience[] }) {
   const [items, setItems] = useState(initialItems);
@@ -141,16 +139,17 @@ export function WorkExperienceEditor({ candidateId, initialItems }: { candidateI
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Employment type</Label>
-              <select
-                value={employmentType}
-                onChange={(e) => setEmploymentType(e.target.value as EmploymentType)}
-                className={SELECT_CLASS}
-              >
-                <option value="full_time">Full-time</option>
-                <option value="part_time">Part-time</option>
-                <option value="internship">Internship</option>
-                <option value="contract">Contract</option>
-              </select>
+              <Select value={employmentType} onValueChange={(v) => setEmploymentType(v as EmploymentType)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full_time">Full-time</SelectItem>
+                  <SelectItem value="part_time">Part-time</SelectItem>
+                  <SelectItem value="internship">Internship</SelectItem>
+                  <SelectItem value="contract">Contract</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Start date *</Label>

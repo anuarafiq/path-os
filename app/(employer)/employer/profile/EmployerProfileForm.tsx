@@ -6,9 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-
-const SELECT_CLASS =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring text-foreground";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const INDUSTRIES = [
   "Technology",
@@ -87,32 +85,30 @@ export function EmployerProfileForm({ employer }: { employer: Employer }) {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="industry">Industry</Label>
-        <select
-          id="industry"
-          value={industry}
-          onChange={(e) => setIndustry(e.target.value)}
-          className={SELECT_CLASS}
-        >
-          <option value="">Select industry</option>
-          {INDUSTRIES.map((i) => (
-            <option key={i} value={i}>{i}</option>
-          ))}
-        </select>
+        <Select value={industry} onValueChange={(v) => setIndustry(v ?? "")}>
+          <SelectTrigger id="industry" className="w-full">
+            <SelectValue placeholder="Select industry" />
+          </SelectTrigger>
+          <SelectContent>
+            {INDUSTRIES.map((i) => (
+              <SelectItem key={i} value={i}>{i}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="size">Company size</Label>
-        <select
-          id="size"
-          value={size}
-          onChange={(e) => setSize(e.target.value)}
-          className={SELECT_CLASS}
-        >
-          <option value="">Select size</option>
-          {SIZES.map((s) => (
-            <option key={s} value={s}>{s} employees</option>
-          ))}
-        </select>
+        <Select value={size} onValueChange={(v) => setSize(v ?? "")}>
+          <SelectTrigger id="size" className="w-full">
+            <SelectValue placeholder="Select size" />
+          </SelectTrigger>
+          <SelectContent>
+            {SIZES.map((s) => (
+              <SelectItem key={s} value={s}>{s} employees</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-1.5">
