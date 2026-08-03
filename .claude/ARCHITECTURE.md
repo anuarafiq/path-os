@@ -153,7 +153,8 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 
 ### Coach
 - `CoachChat.tsx` uses `useChat` (`@ai-sdk/react`) with `DefaultChatTransport({ api: "/api/ai/coach" })` — not a hand-rolled `fetch`/`getReader()` loop. `message.parts` gives text parts (rendered via `react-markdown`) and tool parts (`isToolUIPart`/`getToolName` from `ai`) for free.
-- `navigateTo` tool results are picked up by an effect that watches `messages` for a `navigateTo` part in `state === "output-available"`, dedupes by `toolCallId` (a `useRef<Set>`, since messages re-render on every stream chunk), then calls `router.push(path)` + `router.refresh()`. Coach stays page-scoped at `/coach` — navigating away unmounts it and drops the conversation, same as leaving any other page.
+- `navigateTo` tool results are picked up by an effect that watches `messages` for a `navigateTo` part in `state === "output-available"`, dedupes by `toolCallId` (a `useRef<Set>`, since messages re-render on every stream chunk), then calls `router.push(path)` + `router.refresh()`.
+- **Coach lives in a side panel, not a page.** `/coach` is a dead route that just `redirect("/dashboard")`s (kept only so old bookmarks/links don't 404). The real UI is `CandidateShell.tsx`'s `coachOpen` state + `ChatPanel` + `CoachChat inPanel`. Any trigger that should open the coach — not just the sidebar's "AI Coach" nav button — reads `useCoachPanel()` from `components/CoachPanelContext.tsx` (a plain `createContext<(() => void) | null>`, provided by `CandidateShell` around `{children}`, `null` when there's no `candidateProfile`) and calls it on click, e.g. `components/CoachDashboardTile.tsx` (the dashboard's "Chat with AI Coach" quick-action card). Do **not** add a new `Link href="/coach"` — it now goes nowhere useful. The employer side mirrors this with `EmployerShell` + `EmployerCoach`, unchanged by this pattern.
 
 ---
 

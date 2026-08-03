@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Route, Bot, DollarSign, FolderKanban, Check, Circle, GraduationCap, Briefcase, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HighlightGlowCard } from "@/components/HighlightGlowCard";
+import { CoachDashboardTile } from "@/components/CoachDashboardTile";
 import { DotGrid } from "@/components/DotGrid";
 
 export default async function DashboardPage() {
@@ -144,35 +145,27 @@ export default async function DashboardPage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {quickActions.map((action) => {
-            const tile = (
+            if (action.coach) {
+              return (
+                <HighlightGlowCard key={action.href}>
+                  <CoachDashboardTile label={action.label} desc={action.desc} />
+                </HighlightGlowCard>
+              );
+            }
+            return (
               <Link
                 key={action.href}
                 href={action.href}
-                className={cn(
-                  "flex items-start gap-4 rounded-lg p-4 transition-all duration-200 group hover:-translate-y-0.5 active:scale-[0.98]",
-                  action.coach
-                    ? "bg-gradient-coach shadow-card hover:brightness-105"
-                    : "glass border border-transparent hover:border-brand/40 hover:bg-brand-subtle/30"
-                )}
+                className="flex items-start gap-4 rounded-lg p-4 transition-all duration-200 group hover:-translate-y-0.5 active:scale-[0.98] glass border border-transparent hover:border-brand/40 hover:bg-brand-subtle/30"
               >
-                <action.icon
-                  className={cn("w-5 h-5 mt-0.5 shrink-0", action.coach ? "text-white" : "text-brand")}
-                  aria-hidden="true"
-                />
+                <action.icon className="w-5 h-5 mt-0.5 shrink-0 text-brand" aria-hidden="true" />
                 <div>
-                  <p className={cn("font-medium text-sm", action.coach ? "text-white on-gradient" : "text-foreground group-hover:text-brand transition-colors")}>
+                  <p className="font-medium text-sm text-foreground group-hover:text-brand transition-colors">
                     {action.label}
                   </p>
-                  <p className={cn("text-xs mt-0.5", action.coach ? "text-white/85 on-gradient" : "text-muted-foreground")}>
-                    {action.desc}
-                  </p>
+                  <p className="text-xs mt-0.5 text-muted-foreground">{action.desc}</p>
                 </div>
               </Link>
-            );
-            return action.coach ? (
-              <HighlightGlowCard key={action.href}>{tile}</HighlightGlowCard>
-            ) : (
-              tile
             );
           })}
         </div>

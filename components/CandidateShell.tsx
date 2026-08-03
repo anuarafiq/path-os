@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CandidateSidebar } from "@/components/CandidateSidebar";
 import { ChatPanel } from "@/components/ChatPanel";
 import { CoachChat } from "@/components/CoachChat";
+import { CoachPanelContext } from "@/components/CoachPanelContext";
 
 export function CandidateShell({
   name,
@@ -28,7 +29,9 @@ export function CandidateShell({
       />
       <main className="flex-1 min-w-0 overflow-auto">
         <div className="h-12 md:hidden" aria-hidden="true" />
-        {children}
+        <CoachPanelContext.Provider value={candidateProfile ? () => setCoachOpen(true) : null}>
+          {children}
+        </CoachPanelContext.Provider>
       </main>
       {candidateProfile && (
         <ChatPanel open={coachOpen}>
