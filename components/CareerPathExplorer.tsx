@@ -5,17 +5,22 @@ import ReactFlow, {
   Node,
   Edge,
   Background,
+  BaseEdge,
   Controls,
   MiniMap,
   Handle,
   Position,
+  getBezierPath,
   useNodesState,
   useEdgesState,
   useReactFlow,
+  useStoreApi,
   ReactFlowProvider,
   MarkerType,
   type NodeTypes,
   type NodeChange,
+  type EdgeTypes,
+  type EdgeProps,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useTheme } from "next-themes";
@@ -38,10 +43,26 @@ type CareerEdge = Database["public"]["Tables"]["career_edges"]["Row"];
 type CareerNodeCardData = {
   node: CareerNode;
   isActive: boolean;
-  isHighlighted: boolean;
   isOnPath: boolean;
   isTarget: boolean;
+  /** 0-based position along the active route, or null when this node isn't on it */
+  hop: number | null;
+  /** a route is active and this node isn't part of it */
+  dimmed: boolean;
+  /** bumps on every destination change so the reveal animation replays */
+  revealKey: number;
 };
+
+type CareerRouteEdgeData = {
+  hop: number | null;
+  faded: boolean;
+  revealKey: number;
+  activeColor: string;
+  restColor: string;
+};
+
+/** ms between consecutive hops of the route reveal — mirrored by --rise-step in the panel */
+const HOP_MS = 200;
 
 const LEVEL_Y: Record<string, number> = {
   entry: 0,
@@ -88,6 +109,27 @@ const FLOW_COLORS = {
   },
 } as const;
 
+type Point = { x: number; y: number };
+
+/** Bounding box over node positions, padded by one node's approximate footprint. */
+function boundsOf(points: Point[]) {
+  if (points.length === 0) return null;
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  return {
+    x: minX,
+    y: minY,
+    width: Math.max(...xs) + NODE_FIT_WIDTH - minX,
+    height: Math.max(...ys) + NODE_FIT_HEIGHT - minY,
+  };
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function readSavedPositions(): Record<string, { x: number; y: number }> {
   if (typeof window === "undefined") return {};
   try {
@@ -99,21 +141,26 @@ function readSavedPositions(): Record<string, { x: number; y: number }> {
 }
 
 function CareerNodeCard({ data }: { data: CareerNodeCardData }) {
-  const { node, isActive, isTarget, isOnPath, isHighlighted } = data;
+  const { node, isActive, isTarget, isOnPath, hop, dimmed, revealKey } = data;
   return (
     <>
       <Handle type="target" position={Position.Top} style={{ opacity: 0, pointerEvents: "none" }} />
       <div
+        // Remount on each reveal so the bloom/dim animation replays rather than
+        // sitting at its already-finished state. Nodes untouched by the route keep a
+        // stable key so a plain re-render doesn't churn them.
+        key={hop !== null || dimmed ? `r${revealKey}` : "rest"}
+        style={hop !== null ? ({ "--hop": hop } as React.CSSProperties) : undefined}
         className={cn(
-          "px-3 py-2 rounded-lg border text-xs font-medium transition-all cursor-pointer select-none min-w-[140px] text-center",
+          "px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer select-none min-w-[140px] text-center",
+          hop !== null && "route-node",
+          dimmed && "route-dimmed",
           isActive
             ? "bg-brand text-primary-foreground border-brand shadow-lg shadow-brand/20"
             : isTarget
             ? "glass border-2 border-brand text-foreground shadow-lg shadow-brand/30 ring-2 ring-brand/40"
             : isOnPath
             ? "glass border-brand/60 text-foreground ring-1 ring-brand/40"
-            : isHighlighted
-            ? "glass border-brand/50 text-foreground"
             : "glass border-border text-foreground hover:border-brand/40"
         )}
       >
@@ -135,8 +182,88 @@ function CareerNodeCard({ data }: { data: CareerNodeCardData }) {
   );
 }
 
+/**
+ * Route edge. Off-route it's a single resting stroke. On-route it stacks a faint track,
+ * a stroke that draws itself in hop order, and a glowing segment that keeps travelling
+ * toward the destination.
+ *
+ * Both animated layers set pathLength="1", which normalises the stroke length to 1 no
+ * matter how long the bezier actually is — so the dash values are constants and there's
+ * no getTotalLength() measurement, no layout read, and no ref.
+ */
+function CareerRouteEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  markerEnd,
+  data,
+}: EdgeProps<CareerRouteEdgeData>) {
+  const [path] = getBezierPath({
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    sourcePosition,
+    targetPosition,
+  });
+
+  const hop = data?.hop ?? null;
+  const restColor = data?.restColor;
+  const activeColor = data?.activeColor;
+
+  if (hop === null) {
+    return (
+      <BaseEdge
+        id={id}
+        path={path}
+        markerEnd={markerEnd}
+        style={{ stroke: restColor, strokeWidth: 1, opacity: data?.faded ? 0.25 : 1 }}
+      />
+    );
+  }
+
+  return (
+    <g key={data?.revealKey} style={{ "--hop": hop } as React.CSSProperties}>
+      {/* faint track, so the route has a visible spine before its hop draws */}
+      <BaseEdge
+        id={id}
+        path={path}
+        markerEnd={markerEnd}
+        style={{ stroke: restColor, strokeWidth: 1, opacity: 0.3 }}
+      />
+      <path
+        className="route-draw"
+        d={path}
+        pathLength={1}
+        fill="none"
+        stroke={activeColor}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <path
+        className="route-pulse"
+        d={path}
+        pathLength={1}
+        fill="none"
+        stroke={activeColor}
+        strokeWidth={3.5}
+        strokeLinecap="round"
+        style={{ filter: `drop-shadow(0 0 4px ${activeColor})` }}
+      />
+    </g>
+  );
+}
+
 const nodeTypes: NodeTypes = {
   careerNode: CareerNodeCard,
+};
+
+const edgeTypes: EdgeTypes = {
+  careerEdge: CareerRouteEdge,
 };
 
 type RoadmapStep = { skill: string; action: string; resource: string };
@@ -170,11 +297,18 @@ function CareerPathExplorerInner({
   candidateSkillNames: string[];
 }) {
   const { fitBounds } = useReactFlow();
+  const storeApi = useStoreApi();
   const [selectedNode, setSelectedNode] = useState<CareerNode | null>(null);
-  const [targetNodeId, setTargetNodeId] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("career-explore-target") ?? null;
-  });
+  // Starts null (not read from localStorage in the initializer) so the server and the
+  // client's first render agree - reading localStorage here would make SSR always render
+  // "no destination" while the client's first render already has the real value, causing a
+  // hydration mismatch. useLayoutEffect runs after hydration but before paint, so the
+  // stored destination still appears in the very first frame the user sees.
+  const [targetNodeId, setTargetNodeId] = useState<string | null>(null);
+  useLayoutEffect(() => {
+    const stored = localStorage.getItem("career-explore-target");
+    if (stored) setTargetNodeId(stored);
+  }, []);
   const [filterCategory, setFilterCategory] = useState<string>(() => {
     const match = careerNodes.find(
       (n) => n.title.toLowerCase() === (currentRole?.toLowerCase() ?? "")
@@ -214,8 +348,26 @@ function CareerPathExplorerInner({
     return findShortestPath(careerNodes, careerEdges, currentNode.id, targetNodeId);
   }, [careerNodes, careerEdges, currentNode, targetNodeId]);
 
-  const pathNodeIdSet = useMemo(() => new Set(pathResult?.nodeIds ?? []), [pathResult]);
-  const pathEdgeIdSet = useMemo(() => new Set(pathResult?.edgeIds ?? []), [pathResult]);
+  // Ordered, not sets — the hop index is what drives the whole reveal choreography
+  const pathNodeHop = useMemo(
+    () => new Map((pathResult?.nodeIds ?? []).map((id, i) => [id, i])),
+    [pathResult]
+  );
+  const pathEdgeHop = useMemo(
+    () => new Map((pathResult?.edgeIds ?? []).map((id, i) => [id, i])),
+    [pathResult]
+  );
+
+  // Bumping this remounts the animated node/edge elements so the reveal replays on a new
+  // destination. Adjusted during render rather than in an effect — an effect fires after
+  // paint, which would show one frame of the previous route's finished state first.
+  // Same pattern as roadmapResetKey below.
+  const [revealFor, setRevealFor] = useState(targetNodeId);
+  const [revealKey, setRevealKey] = useState(0);
+  if (revealFor !== targetNodeId) {
+    setRevealFor(targetNodeId);
+    setRevealKey((k) => k + 1);
+  }
 
   const visibleNodes = useMemo(() => {
     if (targetNodeId) return careerNodes;
@@ -261,26 +413,19 @@ function CareerPathExplorerInner({
   useEffect(() => {
     if (lastFitCategoryRef.current === filterCategory) return;
     lastFitCategoryRef.current = filterCategory;
-    const positions = visibleNodes
-      .map((n) => defaultPositions[n.id])
-      .filter((p): p is { x: number; y: number } => !!p);
-    if (positions.length === 0) return;
-    const minX = Math.min(...positions.map((p) => p.x));
-    const maxX = Math.max(...positions.map((p) => p.x)) + NODE_FIT_WIDTH;
-    const minY = Math.min(...positions.map((p) => p.y));
-    const maxY = Math.max(...positions.map((p) => p.y)) + NODE_FIT_HEIGHT;
-    fitBounds(
-      { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
-      { padding: 0.2, duration: 500 }
+    const bounds = boundsOf(
+      visibleNodes.map((n) => defaultPositions[n.id]).filter((p): p is Point => !!p)
     );
+    if (bounds) fitBounds(bounds, { padding: 0.2, duration: 500 });
   }, [filterCategory, visibleNodes, defaultPositions, fitBounds]);
 
   // Build RF nodes — apply saved positions so drag layout survives data updates
   const categoryNodes = useMemo(() => {
+    const pathIsActive = pathNodeHop.size > 0;
     return visibleNodes.map((node) => {
       const isActive = node.id === currentNode?.id;
       const isTarget = node.id === targetNodeId;
-      const isOnPath = !isActive && !isTarget && pathNodeIdSet.has(node.id);
+      const hop = pathNodeHop.get(node.id) ?? null;
 
       return {
         id: node.id,
@@ -289,35 +434,39 @@ function CareerPathExplorerInner({
         data: {
           node,
           isActive,
-          isHighlighted: false,
-          isOnPath,
+          isOnPath: !isActive && !isTarget && hop !== null,
           isTarget,
+          hop,
+          dimmed: pathIsActive && hop === null,
+          revealKey,
         } satisfies CareerNodeCardData,
       } as Node;
     });
-  }, [visibleNodes, currentNode, targetNodeId, pathNodeIdSet, defaultPositions]);
+  }, [visibleNodes, currentNode, targetNodeId, pathNodeHop, defaultPositions, revealKey]);
 
   const categoryEdges = useMemo<Edge[]>(() => {
     const visibleIds = new Set(visibleNodes.map((n) => n.id));
-    const pathIsActive = pathEdgeIdSet.size > 0;
+    const pathIsActive = pathEdgeHop.size > 0;
     return careerEdges
       .filter((e) => visibleIds.has(e.from_node_id) && visibleIds.has(e.to_node_id))
       .map((e) => {
-        const onPath = pathEdgeIdSet.has(e.id);
+        const hop = pathEdgeHop.get(e.id) ?? null;
         return {
           id: e.id,
+          type: "careerEdge",
           source: e.from_node_id,
           target: e.to_node_id,
           markerEnd: { type: MarkerType.ArrowClosed },
-          animated: onPath,
-          style: onPath
-            ? { stroke: flowColors.edgeActive, strokeWidth: 2 }
-            : pathIsActive
-            ? { stroke: flowColors.edgeDefault, strokeWidth: 1, opacity: 0.25 }
-            : { stroke: flowColors.edgeDefault, strokeWidth: 1 },
+          data: {
+            hop,
+            faded: pathIsActive && hop === null,
+            revealKey,
+            activeColor: flowColors.edgeActive,
+            restColor: flowColors.edgeDefault,
+          } satisfies CareerRouteEdgeData,
         } as Edge;
       });
-  }, [careerEdges, visibleNodes, pathEdgeIdSet, flowColors]);
+  }, [careerEdges, visibleNodes, pathEdgeHop, flowColors, revealKey]);
 
   const [rfNodes, setRfNodes, onNodesChange] = useNodesState(categoryNodes);
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState(categoryEdges);
@@ -359,6 +508,69 @@ function CareerPathExplorerInner({
   useEffect(() => {
     setRfEdges(categoryEdges);
   }, [categoryEdges, setRfEdges]);
+
+  // Glide the camera onto the route corridor as it reveals. Positions come from rfNodes
+  // (this component's state, populated synchronously on first render) rather than
+  // useReactFlow()'s getNodes(), which can lag React Flow's internal store on first mount.
+  //
+  // lastCameraRevealRef is only set once the move actually applies (inside applyFit), not
+  // when it's merely scheduled - this effect re-fires on every rfNodes update (several
+  // happen right after mount), so a ref set too early would let a later re-fire's cleanup
+  // cancel the pending move while the ref still blocks any retry. Setting it late keeps the
+  // effect self-healing: an attempt that can't complete yet just tries again next update.
+  const lastCameraRevealRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!pathResult) return;
+    if (lastCameraRevealRef.current === revealKey) return;
+    const byId = new Map(rfNodes.map((n) => [n.id, n.position]));
+    const bounds = boundsOf(
+      pathResult.nodeIds.map((id) => byId.get(id)).filter((p): p is Point => !!p)
+    );
+    if (!bounds) return;
+
+    const reduced = prefersReducedMotion();
+    let cancelled = false;
+    let rafId: number | null = null;
+
+    const applyFit = () => {
+      lastCameraRevealRef.current = revealKey;
+      fitBounds(bounds, { padding: 0.3, duration: reduced ? 0 : 600 });
+    };
+
+    // fitBounds() zooms against React Flow's internally-tracked container width
+    // (store.getState()), not the live DOM. The destination is set on the same render the
+    // detail panel first appears, and the store can still report the wider pre-panel width
+    // for a frame or two after - fitting the route into a container it thinks is ~300px
+    // wider than it is, landing on the wrong (too zoomed-out) scale. Poll until the store
+    // catches up with the measured DOM width; capped so a persistent mismatch can't stall
+    // the reveal indefinitely.
+    const waitForStableWidth = (attempt: number) => {
+      if (cancelled) return;
+      const wrapper = document.querySelector(".react-flow") as HTMLElement | null;
+      const liveWidth = wrapper?.getBoundingClientRect().width;
+      const storeWidth = storeApi.getState().width;
+      if (liveWidth && Math.abs(liveWidth - storeWidth) > 5 && attempt < 30) {
+        rafId = requestAnimationFrame(() => waitForStableWidth(attempt + 1));
+        return;
+      }
+      applyFit();
+    };
+
+    if (reduced) {
+      waitForStableWidth(0);
+      return () => {
+        cancelled = true;
+        if (rafId !== null) cancelAnimationFrame(rafId);
+      };
+    }
+    // let the off-route nodes recede first, so the camera move reads as a response
+    const timer = setTimeout(() => waitForStableWidth(0), 120);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+  }, [revealKey, pathResult, rfNodes, fitBounds, storeApi]);
 
   // Capture drag-end positions and persist them
   const handleNodesChange = useCallback(
@@ -510,6 +722,7 @@ function CareerPathExplorerInner({
           onEdgesChange={onEdgesChange}
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.3}
@@ -574,7 +787,13 @@ function CareerPathExplorerInner({
                 </p>
               </div>
             ) : (
-              <div className="px-5 pb-4 flex flex-col gap-4 max-h-96 overflow-y-auto">
+              <div
+                // remount on each destination so the stagger replays
+                key={revealKey}
+                // run the panel stagger on the graph's hop cadence, not the 60ms default
+                style={{ "--rise-step": `${HOP_MS}ms` } as React.CSSProperties}
+                className="px-5 pb-4 flex flex-col gap-4 max-h-96 overflow-y-auto"
+              >
                 {/* Hop timeline */}
                 <div className="flex flex-col gap-0">
                   {pathResult.nodeIds.map((nodeId, i) => {
@@ -585,7 +804,11 @@ function CareerPathExplorerInner({
                     const isFirst = i === 0;
                     const isLast = i === pathResult.nodeIds.length - 1;
                     return (
-                      <div key={nodeId} className="flex gap-3">
+                      <div
+                        key={nodeId}
+                        style={{ "--i": i } as React.CSSProperties}
+                        className="animate-rise flex gap-3"
+                      >
                         <div className="flex flex-col items-center">
                           <div
                             className={cn(
@@ -627,9 +850,15 @@ function CareerPathExplorerInner({
                   const needGaps = uniqueGaps.filter((g) => !skillNamesLower.has(g));
                   const haveGaps = uniqueGaps.filter((g) => skillNamesLower.has(g));
 
+                  // land after the last hop
+                  const tailIndex = pathResult.nodeIds.length;
+
                   return (
                     <>
-                      <div className="bg-background rounded-lg border border-border p-3 flex flex-col gap-2">
+                      <div
+                        style={{ "--i": tailIndex } as React.CSSProperties}
+                        className="animate-rise bg-background rounded-lg border border-border p-3 flex flex-col gap-2"
+                      >
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Total time</span>
                           <span className="text-xs font-semibold tabular text-foreground">
@@ -658,7 +887,10 @@ function CareerPathExplorerInner({
                       </div>
 
                       {(needGaps.length > 0 || haveGaps.length > 0) && (
-                        <div className="flex flex-col gap-2">
+                        <div
+                          style={{ "--i": tailIndex + 1 } as React.CSSProperties}
+                          className="animate-rise flex flex-col gap-2"
+                        >
                           {haveGaps.length > 0 && (
                             <div>
                               <p className="text-xs text-muted-foreground mb-1.5">

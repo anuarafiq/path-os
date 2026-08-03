@@ -297,14 +297,115 @@
       0 8px 20px -6px oklch(0.72 0.19 353 / 0.28);
   }
 
-  /* Staggered entrance reveal — set --i on each item for the stagger index */
+  /* Staggered entrance reveal — set --i on each item for the stagger index.
+     --rise-step overrides the per-item delay so a stagger can be synced to another
+     timeline (the career route reveal runs at 200ms/hop, not the 60ms default). */
   @media (prefers-reduced-motion: no-preference) {
     .animate-rise {
       opacity: 0;
       transform: translateY(8px);
       animation: rise 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: calc(var(--i, 0) * 60ms);
+      animation-delay: calc(var(--i, 0) * var(--rise-step, 60ms));
     }
+  }
+
+  /* ── Career route reveal ──────────────────────────────────────────────────
+     Every rule here is the FINAL state; the motion that gets to it lives in the
+     reduced-motion-guarded block below. So `prefers-reduced-motion: reduce`
+     lands on the finished route instantly, fully styled, with zero movement.
+     --hop is the 0-based index of a node/edge along the route. */
+
+  /* Off-route nodes recede so the route reads as a route */
+  .route-dimmed {
+    opacity: 0.25;
+    transform: scale(0.96);
+  }
+
+  /* The lit route stroke, drawn over the resting edge */
+  .route-draw {
+    stroke-dashoffset: 0;
+  }
+
+  /* A short glowing segment travelling along the route toward the destination */
+  .route-pulse {
+    stroke-dasharray: 0.06 0.94;
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* an animation, not a transition — these nodes remount on each reveal, and a
+       transition has no prior value to interpolate from after a remount */
+    .route-dimmed {
+      animation: route-dim 320ms ease backwards;
+    }
+
+    /* pathLength="1" on the <path> normalises stroke length, so these dash
+       values are literal constants — no getTotalLength() measurement needed */
+    .route-draw {
+      stroke-dasharray: 1;
+      animation: route-draw 380ms cubic-bezier(0.33, 1, 0.68, 1) backwards;
+      animation-delay: calc(var(--hop, 0) * 200ms);
+    }
+
+    .route-pulse {
+      animation:
+        route-pulse-in 200ms ease forwards,
+        route-pulse 1400ms linear infinite;
+      animation-delay: calc(var(--hop, 0) * 200ms + 380ms);
+    }
+
+    /* Each node lights up exactly as its incoming edge draw arrives */
+    .route-node {
+      animation: route-bloom 520ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+      animation-delay: calc(var(--hop, 0) * 200ms);
+    }
+  }
+}
+
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes route-dim {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes route-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes route-pulse {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes route-pulse-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes route-bloom {
+  from {
+    transform: scale(0.88);
+    box-shadow: 0 0 0 0 var(--brand);
+  }
+  60% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  to {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 transparent;
   }
 }
 
