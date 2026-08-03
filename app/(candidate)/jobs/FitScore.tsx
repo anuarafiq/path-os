@@ -52,13 +52,17 @@ export default function FitScore({ jobId, candidateId: _candidateId }: FitScoreP
   return (
     <div className="flex items-start gap-2 mt-2">
       <span
-        className="shrink-0 text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full border"
+        className="fitscore-pop shrink-0 text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full border"
         style={{ color, borderColor: color, background: `color-mix(in oklch, ${color} 15%, transparent)` }}
       >
         {result.score}% match
       </span>
       {result.summary && (
-        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1" title={result.summary}>
+        <p
+          className="chat-rise text-xs text-muted-foreground leading-relaxed line-clamp-1"
+          style={{ "--i": 1, "--rise-step": "80ms" } as React.CSSProperties}
+          title={result.summary}
+        >
           {result.summary}
         </p>
       )}

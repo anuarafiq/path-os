@@ -883,3 +883,23 @@ html:not(.vt-theme-active)::view-transition-new(*) {
   align-items: center;
   gap: 6px;
 }
+
+/* ── Jobs page ──────────────────────────────────────────────────────────
+   Job cards reuse .animate-rise as-is (page-load stagger, --i per card).
+   FitScore's match pill gets one new purpose-built "materialize" keyframe
+   since a pill-shaped badge reads better with a scale-pop than a directional
+   rise; its summary text reuses .chat-rise. ApplyButton's step swap reuses
+   .chat-rise on a keyed wrapper — see ApplyButton.tsx. */
+@media (prefers-reduced-motion: no-preference) {
+  .fitscore-pop {
+    opacity: 0;
+    transform: scale(0.7);
+    animation: fitscore-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+}
+@keyframes fitscore-pop {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
