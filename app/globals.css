@@ -411,15 +411,20 @@
    custom properties inherit into the ::view-transition tree from :root.
 
    mix-blend-mode must be overridden here — the UA default is plus-lighter, which
-   is additive and blows out the overlap of a clip reveal rather than a crossfade. */
-::view-transition-old(root),
-::view-transition-new(root) {
+   is additive and blows out the overlap of a clip reveal rather than a crossfade.
+
+   Every rule below is scoped to .vt-theme-active, a class ThemeToggle puts on <html>
+   for the duration of the wipe. Without that scope these would apply to the `root`
+   group of ANY startViewTransition call in the app — the pipeline board's card flights
+   included — replaying a full-page iris wipe from a stale origin. */
+.vt-theme-active::view-transition-old(root),
+.vt-theme-active::view-transition-new(root) {
   mix-blend-mode: normal;
 }
-::view-transition-old(root) {
+.vt-theme-active::view-transition-old(root) {
   animation: none;
 }
-::view-transition-new(root) {
+.vt-theme-active::view-transition-new(root) {
   z-index: 1;
   animation: vt-iris 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -427,10 +432,10 @@
 /* The icon is lifted out of the root snapshot so it rides above the wipe. Rotation
    only, no scale: the centre disc is a circle and so rotation-invariant, which leaves
    it visually static while the rays spin out and the notch swings in around it. */
-::view-transition-old(theme-toggle) {
+.vt-theme-active::view-transition-old(theme-toggle) {
   animation: vt-icon-out 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-::view-transition-new(theme-toggle) {
+.vt-theme-active::view-transition-new(theme-toggle) {
   animation: vt-icon-in 600ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
@@ -454,6 +459,113 @@
   from {
     opacity: 0;
     transform: rotate(90deg);
+  }
+}
+
+/* ── Pipeline board: drag, drop, card flight ──────────────────────────────
+   Two motion paths share this block. Button-driven stage changes fly via the
+   View Transitions API (timing tuned below). Drag-driven ones track the pointer
+   through the --drag-* custom properties, then settle with a WAAPI spring in
+   PipelineBoard.tsx. Outside @layer utilities, same as the wipe above.
+
+   Convention followed from the Career spine/route reveal: the base rule is the
+   resting state, decoration lives in prefers-reduced-motion: no-preference. The
+   exception is the drag positioning itself — that is functional, not decorative;
+   without it there is no interaction to reduce. */
+
+.pipeline-card {
+  /* Stops a touch-drag being claimed as page scroll before the 6px threshold in
+     PipelineBoard.tsx can see it. Trade-off: dragging directly on a card no longer
+     scrolls the page — column headers and gaps still do. Upgrade path if that
+     grates in use: arm the drag behind a ~350ms long-press and relax this to pan-y. */
+  touch-action: none;
+  /* Without this, pressing and moving over the card's text starts a native selection
+     drag, which fires pointercancel and kills the gesture. The companion fix for the
+     candidate-name link is the onDragStart handler in PipelineBoard.tsx. */
+  user-select: none;
+}
+
+.pipeline-card[data-dragging="true"] {
+  position: fixed;
+  left: var(--drag-x, 0px);
+  top: var(--drag-y, 0px);
+  /* position: fixed drops the column's width constraint, so it is re-supplied from
+     the rect measured at grab time. */
+  width: var(--drag-w, auto);
+  z-index: 50;
+  /* Required, not cosmetic: elementFromPoint hit-testing would otherwise only ever
+     return the card riding under the cursor. */
+  pointer-events: none;
+  cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pipeline-card[data-dragging="true"] {
+    --pipeline-drag-shadow:
+      0 18px 34px -10px oklch(0.16 0.004 258 / 0.28),
+      0 6px 14px -6px oklch(0.16 0.004 258 / 0.22);
+    transform: rotate(var(--drag-rot, 0deg)) scale(1.035);
+    box-shadow: var(--pipeline-drag-shadow);
+    transition: box-shadow 160ms ease;
+  }
+
+  .dark .pipeline-card[data-dragging="true"] {
+    --pipeline-drag-shadow:
+      0 18px 34px -10px oklch(0 0 0 / 0.5),
+      0 6px 14px -6px oklch(0 0 0 / 0.4);
+  }
+}
+
+/* Active drop target: background wash plus a border colour shift. No gradient (the
+   system has exactly two and this is not one of them) and no side-stripe border. */
+.pipeline-column[data-drop-active="true"] {
+  background-color: var(--brand-subtle);
+}
+
+.pipeline-column-inner[data-drop-active="true"] {
+  border-color: var(--brand);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pipeline-column {
+    transition: background-color 160ms ease;
+  }
+  .pipeline-column-inner {
+    transition: border-color 160ms ease;
+  }
+}
+
+/* Card flight timing. The UA default 250ms group animation reads sluggish next to the
+   spring settle, so it is retuned to .animate-rise's ease-out-expo and the app keeps
+   one motion voice. Scoped away from .vt-theme-active so the theme wipe holds its
+   own 600ms pacing. */
+html:not(.vt-theme-active)::view-transition-group(*) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+html:not(.vt-theme-active)::view-transition-old(*),
+html:not(.vt-theme-active)::view-transition-new(*) {
+  animation-duration: 220ms;
+}
+
+/* Rejected tray. Always mounted now — a reject flies into it, so it needs a real
+   collapse instead of a conditional unmount. 0fr→1fr is the only way to transition
+   into an intrinsic height. */
+.pipeline-tray-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+}
+.pipeline-tray-body[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.pipeline-tray-body > * {
+  min-height: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pipeline-tray-body {
+    transition: grid-template-rows 260ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
 

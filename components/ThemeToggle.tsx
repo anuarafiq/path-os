@@ -85,6 +85,12 @@ export function ThemeToggle() {
     root.style.setProperty("--vt-y", `${cy}px`);
     root.style.setProperty("--vt-r", `${radius}px`);
 
+    // The iris-wipe rules in globals.css target ::view-transition-*(root), which exists for
+    // *every* startViewTransition call in the app — including the pipeline board's card
+    // flights. Unscoped, those rules would replay the full-page wipe from whatever origin
+    // this toggle last wrote. This class is what limits the wipe to an actual theme change.
+    root.classList.add("vt-theme-active");
+
     // Named imperatively, on the clicked icon only: a duplicate view-transition-name
     // across two *rendered* elements aborts the whole transition, and both sidebar
     // instances (desktop aside + mobile drawer) are in the tree at the same time.
@@ -102,6 +108,11 @@ export function ThemeToggle() {
     transition.finished.finally(() => {
       icon.style.removeProperty("view-transition-name");
     });
+
+    // Dropped on a clock, not on `finished`. A paused transition (backgrounded tab) never
+    // settles that promise, and a stuck .vt-theme-active would resurrect exactly the
+    // cross-feature wipe this class exists to prevent. A timestamp always expires.
+    window.setTimeout(() => root.classList.remove("vt-theme-active"), WIPE_MS + 100);
   }, [resolvedTheme, setTheme]);
 
   return (
