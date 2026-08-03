@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import SaveToPoolButton from "./SaveToPoolButton";
+import PortfolioLink from "@/components/PortfolioLink";
 
 type MatchResult = {
   candidateId: string;
@@ -115,15 +116,19 @@ export default function SmartMatchPage() {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed pl-11">{r.summary}</p>
-                {employerId && (
-                  <div className="pl-11 mt-2">
+                <div className="pl-11 mt-2 flex items-center gap-2">
+                  <PortfolioLink
+                    candidateId={r.candidateId}
+                    className="text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-brand hover:border-brand-dim transition-colors"
+                  />
+                  {employerId && (
                     <SaveToPoolButton
                       candidateId={r.candidateId}
                       employerId={employerId}
                       initialInPool={pooledIds.has(r.candidateId)}
                     />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ))}
           </div>

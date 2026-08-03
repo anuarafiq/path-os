@@ -168,6 +168,21 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 - Renders: header, bio, Education, Certificates, Work Experience, Skills, Projects (portfolio_items) sections. Standalone layout — no sidebar, no nav rail. Minimal header with "Path OS" wordmark + footer "Powered by Path OS / Build your profile →".
 - `generateMetadata` sets `<title>` to `"${name} — Path OS Portfolio"`.
 - `components/ShareButton.tsx` — client component on the private `/portfolio` page. Copies `/p/{candidateId}` URL to clipboard; shows "Copied!" for 2s.
+
+#### Career spine (overdrive pass)
+
+Education, certificates and work experience are no longer three sections. They merge into one `Career` chronology whose spine draws itself as you scroll.
+
+- **Why merged.** All three are dated, and a recruiter reads a career as one sequence. `buildTimeline()` normalises the three row shapes into `TimelineEntry[]` and sorts résumé-style: most recently ended first, current entries pinned to the top (`endKey` returns `Infinity` for them), ties broken by start date. Skills and Projects are not chronological and stay as they were.
+- **Kind survives the merge as a text label and a node shape, never as a colour** - work is a solid brand disc, education a hollow ring, certificate a small disc. Per-item accent colours are banned (`.impeccable.md` Design Principle 3), and the visible `Work`/`Education`/`Certificate` label is also what replaces the grouping screen-reader users lost when the three `<h2>`s collapsed into one.
+- **Three layers, same vocabulary as `CareerRouteEdge`** in the Explorer: a faint `--border` track, a lit `--brand` stroke drawn over it, and a node that blooms as the stroke arrives. There the sequence runs off a timer; here it runs off scroll position, so the page adds **zero client JS and stays a server component**.
+- **Per-row timelines, not one long one.** Each `<li>` declares `view-timeline-name: --spine-entry` and its own children read it. Siblings reusing one name is fine, since lookup walks ancestors. Driving a single full-height spine from one timeline is the obvious approach and the wrong one - the ranges stop behaving intuitively once the element is taller than the viewport.
+- **Ranges are `cover`, not `entry`.** For a row shorter than the viewport the entire `entry` phase elapses within a few hundred pixels of the very bottom edge, so the reveal happens off where anyone is reading. `cover` spans viewport + row height, which lands it in the lower-middle of the screen. Current values (`cover 15%` → `cover 45%` for the stroke, tighter for node and body) were tuned against real screenshots, not derived.
+- **The year gutter is an axis, so its label reads the same key the list is sorted on** (`axisLabel`, end year or `Now`), which keeps it monotonically descending, and it renders only when it differs from the row above so consecutive years group under one tick. It also has to animate on the node's range: left out of the reveal it sits alone in the gutter beside an entry that has not appeared yet, which reads as a bug. Caught by screenshot.
+- **Geometry.** Rows carry `padding-block` and **no gap** - a gap punches visible breaks in the spine. `:first-child` starts the line at the first node and `:last-child` stops it at the last, so it runs node-to-node instead of dangling at both ends; `:only-child` hides it entirely, because one entry is a point, not a line. Verified by measuring: all segments share one rail x, every node is centred on it, and all junction gaps are 0.
+- **Degradation, all three states complete.** Base rules are the finished spine, so `prefers-reduced-motion: reduce` lands on it fully drawn. Firefox has no scroll-driven animations, so `@supports not (animation-timeline: view())` gives rows a one-time stagger off `spine-rise` and leaves the spine static. That fallback must stay inside `@supports not` or it fights the scrubbed animation in Chrome.
+- CSS lives at the **top level** of `globals.css`, not in `@layer utilities`, same call as the iris wipe and for the same truncation reason.
+- Incidental: moving `Date.now()` out of render and into `buildTimeline()` cleared a pre-existing `react-hooks/purity` lint error on this file.
 - `/p/` is not in `proxy.ts` protectedPaths — no middleware change needed. `proxy.ts` rate-limits `/p/` (60/min/IP) and `/api/demo` (5/min/IP) via `lib/rate-limit.ts` (in-memory, per-instance).
 
 ### Security
@@ -198,12 +213,21 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 - Board holds optimistic local state. Stages: `["applied", "reviewed", "shortlisted", "offered"]`. ← / → chevrons step through stages; ✕ rejects.
 - Rejected cards hide from columns, appear in collapsible section below with "Restore →".
 - `loadingId` state disables buttons during in-flight updates; errors revert state and show "Update failed".
+- **A null `candidate` on an `AppRow` means the candidate set `is_public = false`, never a missing/deleted record** — `applications.candidate_id` is `on delete cascade`, so a deleted candidate takes its applications with it rather than leaving an orphaned row. The `candidate_profiles(id, name, job_title)` embed on the `applications` select (`page.tsx`) is blocked by the same `is_public = true` RLS policy that gates search (migration 005), and PostgREST returns `null` for a blocked embed rather than erroring. `PipelineBoard.tsx` renders that state as "Private profile" / "Hidden by candidate", not "Unknown" — the stage buttons, reject, and restore all act on the `applications` row and stay fully functional regardless.
 
 ### Smart Search & Talent Pool (`/employer/search`)
 - `SaveToPoolButton.tsx` — client component. On mount fetches employer_id + existing `talent_pools` entries. Inserts with `source: 'scouted'`; handles `23505` as already-saved. Shows "Saved ✓" in `--success`.
+- `/api/ai/match` reads `candidate_profiles` through the auth'd server client (`@/lib/supabase/server`), so the same `is_public = true` RLS policy applies — every match result is a public candidate by construction. No extra visibility check needed in the route or the page.
 
 ### Re-engage
 - `POST /api/ai/re-engage` fetches employer's open jobs + talent pool candidates with skills, returns up to 5 `ReEngageSuggestion[]` (`candidateId`, `name`, `jobTitle`, `fitNote`, `outreachDraft`). Returns `{ suggestions: [] }` if pool or jobs empty.
+- Same auth'd-client / RLS guarantee as Smart Search — every suggested candidate is public.
+
+### Employer access to portfolios (`components/PortfolioLink.tsx`)
+- Until this change, nothing in the app linked to `/p/[candidateId]` — the only producer of that URL was `ShareButton.tsx` on the candidate's own private `/portfolio` page, so an employer could only see a portfolio if the candidate sent the link themselves. `PortfolioLink` is a shared `next/link` wrapper (`href="/p/{candidateId}"`, `target="_blank"`, `prefetch={false}` since a pipeline board can hold dozens of cards whose portfolios open in a new tab) used on Smart Search, Re-engage, and Pipeline.
+- On Search and Re-engage it renders unconditionally as its own "View portfolio ↗" pill (quieter than `SaveToPoolButton`'s brand fill — saving to the pool stays the loudest action on that card) since both routes only ever see public candidates (RLS, see above).
+- On Pipeline it takes over the candidate's name itself via its `children` override (`<PortfolioLink candidateId={...}>{app.candidate.name}</PortfolioLink>`) rather than adding a separate pill, since the card is already busy with three stage controls. Only rendered when `app.candidate` is non-null.
+- This doesn't reopen the "one shared component per portfolio section" rule from the Public Portfolio section above — that rule is about the Education/Certs/Work *section* markup being reimplemented per page. This is a link.
 
 ### Hiring Assistant (`/employer/coach`)
 - `EmployerCoach.tsx` — structurally identical to `CoachChat.tsx` (same `useChat` + `navigateTo` effect pattern), pointed at `/api/ai/employer-coach`. Every tool it exposes mirrors an action that already existed as a manual click (post a job, move a pipeline stage, save to talent pool, edit company profile) — no new features were invented to build this, only a conversational/agentic path to existing ones.

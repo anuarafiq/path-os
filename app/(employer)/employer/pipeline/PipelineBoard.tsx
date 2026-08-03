@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import PortfolioLink from "@/components/PortfolioLink";
 
 type AppRow = {
   id: string;
   status: string;
   job_id: string;
-  candidate: { name: string; job_title: string | null } | null;
+  candidate: { id: string; name: string; job_title: string | null } | null;
 };
 
 type JobRow = { id: string; title: string };
@@ -86,11 +87,22 @@ export default function PipelineBoard({ initialApps, jobs }: Props) {
                         <div className="w-6 h-6 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-xs font-bold shrink-0">
                           {app.candidate?.name.charAt(0).toUpperCase() ?? "?"}
                         </div>
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {app.candidate?.name ?? "Unknown"}
-                        </p>
+                        {app.candidate ? (
+                          <PortfolioLink
+                            candidateId={app.candidate.id}
+                            className="text-sm font-medium text-foreground truncate hover:text-brand transition-colors"
+                          >
+                            {app.candidate.name}
+                          </PortfolioLink>
+                        ) : (
+                          <p className="text-sm font-medium text-foreground truncate">Private profile</p>
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{app.candidate?.job_title ?? "—"}</p>
+                      {(app.candidate ? app.candidate.job_title : "Hidden by candidate") && (
+                        <p className="text-xs text-muted-foreground">
+                          {app.candidate ? app.candidate.job_title : "Hidden by candidate"}
+                        </p>
+                      )}
                       {job && <p className="text-xs text-brand mt-1">{job.title}</p>}
                       {hasError && (
                         <p className="text-xs mt-1" style={{ color: "var(--destructive)" }}>
@@ -165,11 +177,22 @@ export default function PipelineBoard({ initialApps, jobs }: Props) {
                     <div className="w-6 h-6 rounded-full bg-elevated flex items-center justify-center text-muted-foreground text-xs font-bold shrink-0">
                       {app.candidate?.name.charAt(0).toUpperCase() ?? "?"}
                     </div>
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {app.candidate?.name ?? "Unknown"}
-                    </p>
+                    {app.candidate ? (
+                      <PortfolioLink
+                        candidateId={app.candidate.id}
+                        className="text-sm font-medium text-foreground truncate hover:text-brand transition-colors"
+                      >
+                        {app.candidate.name}
+                      </PortfolioLink>
+                    ) : (
+                      <p className="text-sm font-medium text-foreground truncate">Private profile</p>
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground">{app.candidate?.job_title ?? "—"}</p>
+                  {(app.candidate ? app.candidate.job_title : "Hidden by candidate") && (
+                    <p className="text-xs text-muted-foreground">
+                      {app.candidate ? app.candidate.job_title : "Hidden by candidate"}
+                    </p>
+                  )}
                   <button
                     onClick={() => moveCard(app.id, "applied")}
                     disabled={loadingId === app.id}

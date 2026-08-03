@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import PortfolioLink from "@/components/PortfolioLink";
 
 type ReEngageSuggestion = {
   candidateId: string;
@@ -63,14 +64,20 @@ export default function ReEngagePage() {
 
       {suggestions.map((s) => (
         <div key={s.candidateId} className="glass border border-border rounded-lg p-4 mb-3">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-sm font-bold">
-              {s.name.charAt(0).toUpperCase()}
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-sm font-bold">
+                {s.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-semibold text-sm">{s.name}</p>
+                <p className="text-xs text-brand">{s.jobTitle}</p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-sm">{s.name}</p>
-              <p className="text-xs text-brand">{s.jobTitle}</p>
-            </div>
+            <PortfolioLink
+              candidateId={s.candidateId}
+              className="text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-brand hover:border-brand-dim transition-colors shrink-0"
+            />
           </div>
           <p className="text-sm text-muted-foreground mb-3">{s.fitNote}</p>
           <div className="bg-background border border-border rounded-md p-3">

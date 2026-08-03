@@ -495,3 +495,206 @@
     box-shadow: 0 0 0 0 transparent;
   }
 }
+
+/* ── Career spine (public portfolio) ──────────────────────────────────────
+   Same three-layer language as CareerRouteEdge in the Explorer: a faint track,
+   a lit stroke drawn over it, and a node that blooms as the stroke arrives.
+   There the sequence is driven by a timer; here it is driven by scroll
+   position, so it needs no client JS and the page stays a server component.
+
+   Everything outside the guarded blocks is the FINAL state. Reduced motion and
+   browsers without scroll-driven animations both land on a complete, fully
+   drawn spine rather than a blank one. */
+
+.spine {
+  --spine-gutter: 2.5rem;   /* year axis column */
+  --spine-rail: 1rem;       /* the line's own column */
+  --spine-x: calc(var(--spine-gutter) + var(--spine-rail) / 2);
+  /* Node centre = row padding (0.875rem) + half the kind label's 1rem line box,
+     so the node sits on the row where the entry starts. Both the label and the
+     year use `leading-4` to keep that arithmetic true. */
+  --spine-node-y: 1.375rem;
+}
+
+@media (min-width: 768px) {
+  .spine {
+    --spine-gutter: 3.25rem;
+  }
+}
+
+/* No gap between items — vertical rhythm is padding *inside* each row, so the
+   per-row segments butt together into one continuous line. A flex/grid gap
+   here would punch visible breaks in the spine. */
+.spine-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--spine-gutter) var(--spine-rail) 1fr;
+  padding-block: 0.875rem;
+}
+
+/* Faint track, per row so it always shares geometry with the lit stroke */
+.spine-item::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: var(--spine-x);
+  width: 1px;
+  background: var(--border);
+}
+
+/* The spine runs node-to-node: it starts at the first node and stops at the
+   last, instead of dangling above the first row and below the last one. */
+.spine-item:first-child::before,
+.spine-item:first-child .spine-seg {
+  top: var(--spine-node-y);
+}
+.spine-item:last-child::before,
+.spine-item:last-child .spine-seg {
+  bottom: auto;
+  height: var(--spine-node-y);
+}
+/* A single entry is a point, not a line */
+.spine-item:only-child::before,
+.spine-item:only-child .spine-seg {
+  display: none;
+}
+
+/* Lit stroke, drawn over the track */
+.spine-seg {
+  position: absolute;
+  inset-block: 0;
+  left: var(--spine-x);
+  width: 1px;
+  background: var(--brand);
+  transform-origin: top;
+}
+
+.spine-year {
+  grid-column: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.spine-body {
+  grid-column: 3;
+}
+
+/* `translate` and `scale` are used as individual properties, not inside a
+   `transform` shorthand — the centring offset and the bloom would otherwise
+   overwrite each other. */
+.spine-node {
+  position: absolute;
+  left: var(--spine-x);
+  top: var(--spine-node-y);
+  translate: -50% -50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--brand);
+}
+
+/* Kind reads as shape, never as colour — Design Principle 3 bans assigning
+   accent colours per item, and a monochrome spine keeps the brand cyan meaning
+   one thing on this page. */
+.spine-node-education {
+  background: var(--background);
+  border: 1.5px solid var(--brand);
+}
+.spine-node-certificate {
+  width: 6px;
+  height: 6px;
+}
+
+@keyframes spine-draw {
+  from {
+    scale: 1 0;
+  }
+}
+
+@keyframes spine-bloom {
+  from {
+    scale: 0.2;
+    opacity: 0;
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 55%, transparent);
+  }
+  60% {
+    scale: 1.15;
+    opacity: 1;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+@keyframes spine-rise {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+
+/* The axis tick belongs to the node, not the copy — it fades, it doesn't travel */
+@keyframes spine-tick {
+  from {
+    opacity: 0;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Every row publishes its own timeline. Siblings reusing one name is fine —
+       lookup walks ancestors, so each child resolves to its own row. */
+    .spine-item {
+      view-timeline-name: --spine-entry;
+      view-timeline-axis: block;
+    }
+
+    /* `animation-timeline` MUST follow the `animation` shorthand: the shorthand
+       resets it back to `auto`, which silently drops the scroll binding.
+
+       Ranges are `cover`, not `entry`. For a row shorter than the viewport the
+       whole `entry` phase elapses within a few hundred pixels of the very
+       bottom edge, where nobody is reading. `cover` spans viewport + row
+       height, which puts the reveal in the lower-middle of the screen. */
+    .spine-seg {
+      animation: spine-draw linear both;
+      animation-timeline: --spine-entry;
+      animation-range: cover 15% cover 45%;
+    }
+
+    .spine-node {
+      animation: spine-bloom linear both;
+      animation-timeline: --spine-entry;
+      animation-range: cover 15% cover 30%;
+    }
+
+    /* Rides the node's range. Left out, the year label sits alone in the gutter
+       next to an entry that has not revealed yet, which reads as a bug. */
+    .spine-year {
+      animation: spine-tick linear both;
+      animation-timeline: --spine-entry;
+      animation-range: cover 15% cover 30%;
+    }
+
+    .spine-body {
+      animation: spine-rise linear both;
+      animation-timeline: --spine-entry;
+      animation-range: cover 20% cover 38%;
+    }
+  }
+}
+
+/* Firefox: no scroll-driven animations, so the spine is static and complete and
+   the rows get a one-time staggered entrance instead. This has to stay inside
+   `@supports not` — applied unconditionally it would fight the scrubbed
+   animation above. Reuses spine-rise rather than the `rise` keyframes, which
+   carry no `from` of their own (that lives on `.animate-rise`). */
+@supports not (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .spine-body {
+      animation: spine-rise 420ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+      animation-delay: calc(var(--i, 0) * 60ms);
+    }
+  }
+}

@@ -20,14 +20,14 @@ export default async function PipelinePage() {
 
   const { data: applications } = await supabase
     .from("applications")
-    .select("id, status, job_id, candidate_profiles(name, job_title)")
+    .select("id, status, job_id, candidate_profiles(id, name, job_title)")
     .in("job_id", (jobs ?? []).map((j) => j.id));
 
   const serializedApps = (applications ?? []).map((a) => ({
     id: a.id,
     status: a.status,
     job_id: a.job_id,
-    candidate: (a.candidate_profiles as unknown as { name: string; job_title: string | null } | null),
+    candidate: (a.candidate_profiles as unknown as { id: string; name: string; job_title: string | null } | null),
   }));
 
   const serializedJobs = (jobs ?? []).map((j) => ({ id: j.id, title: j.title }));
