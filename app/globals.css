@@ -370,6 +370,93 @@
   }
 }
 
+/* ── Theme toggle icon ────────────────────────────────────────────────────
+   One SVG, two states. The disc never changes; only the rays and the crescent
+   notch do. See components/ThemeToggle.tsx for why the geometry is shared.
+   These transitions are what carries the swap on browsers without the View
+   Transitions API — where it is supported, the pseudo-elements below take over. */
+.theme-icon-ray {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+}
+.theme-icon[data-state="moon"] .theme-icon-ray {
+  opacity: 0;
+  transform: scale(0.35);
+}
+
+/* Parked clear of the disc in the sun state; slides in to cut the crescent */
+.theme-icon-notch {
+  transform: translate(10px, -10px);
+}
+.theme-icon[data-state="moon"] .theme-icon-notch {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .theme-icon-ray {
+    transition:
+      opacity 200ms ease,
+      transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--r, 0) * 14ms);
+  }
+  .theme-icon-notch {
+    transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* ── Theme change: iris wipe from the toggle ──────────────────────────────
+   The incoming theme is clipped to a circle expanding from the button while the
+   outgoing one sits still underneath for the full duration. Origin and radius are
+   measured at click time and written onto <html> (components/ThemeToggle.tsx);
+   custom properties inherit into the ::view-transition tree from :root.
+
+   mix-blend-mode must be overridden here — the UA default is plus-lighter, which
+   is additive and blows out the overlap of a clip reveal rather than a crossfade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  animation: none;
+}
+::view-transition-new(root) {
+  z-index: 1;
+  animation: vt-iris 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* The icon is lifted out of the root snapshot so it rides above the wipe. Rotation
+   only, no scale: the centre disc is a circle and so rotation-invariant, which leaves
+   it visually static while the rays spin out and the notch swings in around it. */
+::view-transition-old(theme-toggle) {
+  animation: vt-icon-out 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+::view-transition-new(theme-toggle) {
+  animation: vt-icon-in 600ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes vt-iris {
+  from {
+    clip-path: circle(0px at var(--vt-x) var(--vt-y));
+  }
+  to {
+    clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y));
+  }
+}
+
+@keyframes vt-icon-out {
+  to {
+    opacity: 0;
+    transform: rotate(-90deg);
+  }
+}
+
+@keyframes vt-icon-in {
+  from {
+    opacity: 0;
+    transform: rotate(90deg);
+  }
+}
+
 @keyframes route-dim {
   from {
     opacity: 1;
@@ -406,12 +493,5 @@
   to {
     transform: scale(1);
     box-shadow: 0 0 0 0 transparent;
-  }
-}
-
-@keyframes rise {
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
