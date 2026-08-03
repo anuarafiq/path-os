@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import DemoLogin from "@/components/DemoLogin";
 import { DotGrid } from "@/components/DotGrid";
 import Prism from "@/components/Prism";
@@ -12,6 +13,7 @@ export default function Home() {
       <nav className="flex items-center justify-between px-4 md:px-8 py-5 border-b border-border">
         <Logo size={40} className="rounded-sm" />
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Link
             href="/login"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
