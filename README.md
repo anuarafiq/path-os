@@ -10,7 +10,7 @@ A two-sided career platform that matches candidates to opportunities and helps e
 - **Onboarding** - structured intake of education, work history, skills, and portfolio links; resume upload with AI-parsed auto-fill (paste or upload a CV, Groq extracts structured fields)
 - **Profile editing** - dedicated editors for basic info, education, work experience, skills, and portfolio items post-onboarding
 - **Career exploration** - interactive graph of roles and career paths with salary benchmarking
-- **AI coach (agentic)** - not a canned Q&A bot. Runs a real tool-calling loop (Vercel AI SDK, `stopWhen: stepCountIs(5)`) with 8 tools it decides when to invoke: search open jobs, pull live salary benchmarks, add/remove a skill on the candidate's profile, update profile fields, apply to a job directly, traverse the career graph toward a stated target role (shortest-path + skill gaps), and check real application status. It reasons over the candidate's actual data, not a static prompt.
+- **AI coach (agentic)** - not a canned Q&A bot. Runs a real tool-calling loop, see [Agentic Features](#agentic-features) below.
 - **Certificates** - auto-parse and store Coursera credentials; skill suggestions tied to career progression
 - **Job discovery** - browse open positions (demo mode includes filtering by salary, location, skills)
 - **Applications** - apply to jobs and track pipeline stage
@@ -29,6 +29,43 @@ A two-sided career platform that matches candidates to opportunities and helps e
 - **Personalized recommendations** - suggests career paths and learning roadmaps based on skill gaps
 
 > **Agentic vs. AI-assisted:** the Coach is the one genuinely agentic feature in the app - it chooses which tools to call and when, across multiple steps, based on the conversation. Everything else above (fit scoring, extraction, re-engagement, recommendations) is a single well-prompted LLM call, which is a real distinction if judges probe "how is this agentic."
+
+## Agentic Features
+
+The Coach (candidate side) and its employer counterpart are the genuinely agentic parts of the app. Each runs a real tool-calling loop (Vercel AI SDK `streamText`, `stopWhen: stepCountIs(5)`) against Groq `llama-3.3-70b-versatile` - the model decides which tools to call, in what order, and reasons over the result before replying. Everything else labeled "AI" in this app (fit scoring, extraction, re-engagement) is a single prompted LLM call, not a loop.
+
+### Candidate Coach tools
+Route: `app/api/ai/coach/route.ts`. Chat UI: `components/CoachChat.tsx`.
+
+| Tool | What it does |
+|---|---|
+| `findMatchingJobs` | Search open jobs by skill/location |
+| `getSalaryBenchmarks` | Pull live salary bands (MYR) for a role |
+| `addSkillToProfile` / `removeSkillFromProfile` | Edit the candidate's skill list |
+| `updateProfile` | Update bio, location, seeking status, job title, etc. |
+| `getCareerPathOptions` | Shortest-path + skill-gap traversal of the career graph, optionally toward a stated target role |
+| `getApplicationStatus` | Check real application/pipeline status |
+| `applyToJob` | Submit an application on the candidate's behalf |
+| `navigateTo` | Route the candidate to a page in the app |
+
+### Employer Coach tools
+Route: `app/api/ai/employer-coach/route.ts`. Chat UI: `components/EmployerCoach.tsx`. Similar pattern - writes/posts job descriptions, searches candidates, navigates the employer around the app.
+
+### How to try it
+Log in as the demo candidate (see [Demo Mode](#demo-mode)), open **Coach**, and ask things like:
+- "Find me jobs in Kuala Lumpur that use React." (`findMatchingJobs`)
+- "What's the salary range for a Product Manager in Malaysia?" (`getSalaryBenchmarks`)
+- "Add TypeScript to my profile as a senior skill." (`addSkillToProfile`)
+- "What roles can I move into from my current job?" (`getCareerPathOptions`)
+- "Apply to the first job you found for me." - chains a search + an apply in one turn, the best test of multi-step tool use
+- "Take me to my applications page." (`navigateTo`)
+
+### Limitations
+- **Groq tool-calling is unreliable for anything conditional or structured.** A forced "submit" tool for final structured output previously caused `400 tool_use_failed`; a tool the model was *instructed* to call before every item was silently skipped for at least one item in live testing. Correctness-critical logic (e.g. re-engagement's "don't suggest jobs already applied to") is done deterministically in code, never left to the model deciding to call a check tool.
+- **12,000 tokens/min Groq rate limit** on this plan - repeated testing in a short window can trip `429 rate_limit_exceeded`.
+- **No conversation persistence** - the Coach has no memory across sessions; each chat starts fresh.
+- **No abuse guard** - no per-user request cap on the Coach endpoint yet (tracked in [Known Issues](#known-issues--decisions)).
+- **`stepCountIs(5)`** caps the tool loop at 5 steps per turn - a task needing more chained calls will stop short and hand back to the user instead of continuing silently.
 
 ## Stack
 
