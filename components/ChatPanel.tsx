@@ -20,7 +20,7 @@ export function ChatPanel({
     <div
       className={cn(
         "fixed inset-y-0 right-0 z-50 w-full overflow-hidden pointer-events-none",
-        "md:sticky md:inset-y-auto md:right-auto md:top-0 md:z-auto md:h-screen md:shrink-0 md:pointer-events-auto md:transition-[width] md:duration-300",
+        "md:sticky md:inset-y-auto md:right-auto md:top-0 md:z-auto md:h-screen md:shrink-0 md:pointer-events-auto md:motion-safe:transition-[width] md:motion-safe:duration-300",
         open ? "md:w-[420px]" : "md:w-0"
       )}
     >
@@ -28,7 +28,7 @@ export function ChatPanel({
         aria-hidden={!open}
         className={cn(
           "glass border-l border-border flex flex-col h-full w-full md:w-[420px] md:shrink-0 pointer-events-auto",
-          "transition-transform duration-300 md:transition-none",
+          "motion-safe:transition-transform motion-safe:duration-300 md:transition-none",
           open ? "translate-x-0" : "translate-x-full md:translate-x-0"
         )}
       >

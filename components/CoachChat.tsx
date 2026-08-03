@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { ArrowRight } from "lucide-react";
 
 const STARTER_PROMPTS = [
   "What career paths can I take from my current role?",
@@ -15,6 +16,11 @@ const STARTER_PROMPTS = [
   "What skills should I focus on in the next 6 months?",
   "How do I prepare for senior-level interviews?",
 ];
+
+function navLabel(path: string) {
+  const seg = path.split("/").filter(Boolean).pop() ?? "page";
+  return seg.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export function CoachChat({
   candidateName,
@@ -117,12 +123,13 @@ export function CoachChat({
               I know your profile. Ask me anything about your career — paths, salary, skills, or next steps.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
-              {STARTER_PROMPTS.map((prompt) => (
+              {STARTER_PROMPTS.map((prompt, i) => (
                 <button
                   key={prompt}
                   type="button"
                   onClick={() => handleSend(prompt)}
-                  className="text-left text-sm glass border border-border hover:border-brand/40 hover:bg-brand-subtle/20 px-4 py-3 rounded-lg transition-all text-muted-foreground hover:text-foreground"
+                  style={{ "--i": i } as React.CSSProperties}
+                  className="chat-rise text-left text-sm glass border border-border hover:border-brand/40 hover:bg-brand-subtle/20 px-4 py-3 rounded-lg transition-all text-muted-foreground hover:text-foreground"
                 >
                   {prompt}
                 </button>
@@ -138,10 +145,16 @@ export function CoachChat({
             .join("");
           if (!text && message.role === "assistant" && !(streaming && i === messages.length - 1)) return null;
 
+          const navChips = message.role === "assistant"
+            ? message.parts
+                .filter(isToolUIPart)
+                .filter((part) => getToolName(part) === "navigateTo" && part.state === "output-available")
+            : [];
+
           return (
             <div
               key={message.id}
-              className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}
+              className={cn("flex chat-rise", message.role === "user" ? "justify-end" : "justify-start")}
             >
               {message.role === "assistant" && (
                 <div className="w-6 h-6 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-xs shrink-0 mt-0.5 mr-2">
@@ -173,8 +186,29 @@ export function CoachChat({
                   </ReactMarkdown>
                 )}
                 {message.role === "assistant" && streaming && i === messages.length - 1 && (
-                  <span className="inline-block w-1.5 h-3.5 bg-brand ml-0.5 animate-pulse rounded-sm" />
+                  text ? (
+                    <span className="coach-caret" aria-hidden="true" />
+                  ) : (
+                    <span className="coach-thinking" role="status" aria-label="Coach is thinking">
+                      <span className="coach-thinking-dot" style={{ "--i": 0 } as React.CSSProperties} />
+                      <span className="coach-thinking-dot" style={{ "--i": 1 } as React.CSSProperties} />
+                      <span className="coach-thinking-dot" style={{ "--i": 2 } as React.CSSProperties} />
+                    </span>
+                  )
                 )}
+                {navChips.map((part) => {
+                  const path = (part.output as { path?: string } | undefined)?.path;
+                  if (!path) return null;
+                  return (
+                    <span
+                      key={part.toolCallId}
+                      className="coach-nav-chip chat-rise mt-2 border border-brand/40 bg-brand-subtle/40 text-brand rounded-full px-2.5 py-1 text-xs font-medium"
+                    >
+                      <ArrowRight className="w-3 h-3" />
+                      Opening {navLabel(path)}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           );
