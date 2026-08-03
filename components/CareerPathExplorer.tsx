@@ -11,12 +11,22 @@ import ReactFlow, {
   Position,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  ReactFlowProvider,
   MarkerType,
   type NodeTypes,
   type NodeChange,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useTheme } from "next-themes";
+import { ChevronDownIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { findShortestPath } from "@/lib/career-path";
@@ -45,6 +55,10 @@ const CATEGORY_ORDER = ["Engineering", "AI/ML", "Data", "Product", "Design", "Bu
 const LANE_WIDTH = 560;
 const NODE_SPACING = 150;
 const POSITIONS_STORAGE_KEY = "career-explore-positions-v2";
+// Approximate node footprint for camera framing on filter change (actual measured width
+// varies ~140-190px by title length; fitBounds's padding option absorbs the imprecision).
+const NODE_FIT_WIDTH = 190;
+const NODE_FIT_HEIGHT = 60;
 
 // Keep in sync with light/dark tokens in app/globals.css
 const FLOW_COLORS = {
@@ -52,7 +66,7 @@ const FLOW_COLORS = {
     edgeActive: "oklch(0.78 0.145 196)",
     edgeDefault: "oklch(0.29 0.014 240)",
     canvasBg: "oklch(0.155 0.012 240)",
-    dotBg: "oklch(0.29 0.014 240)",
+    dotBg: "oklch(0.42 0.02 240)",
     miniMapActive: "oklch(0.78 0.145 196)",
     miniMapTarget: "oklch(0.68 0.135 196)",
     miniMapOnPath: "oklch(0.56 0.11 196)",
@@ -64,7 +78,7 @@ const FLOW_COLORS = {
     edgeActive: "oklch(0.62 0.145 196)",
     edgeDefault: "oklch(0.90 0.004 258)",
     canvasBg: "oklch(0.973 0.002 236)",
-    dotBg: "oklch(0.90 0.004 258)",
+    dotBg: "oklch(0.80 0.006 258)",
     miniMapActive: "oklch(0.62 0.145 196)",
     miniMapTarget: "oklch(0.53 0.135 196)",
     miniMapOnPath: "oklch(0.72 0.10 196)",
@@ -95,12 +109,12 @@ function CareerNodeCard({ data }: { data: CareerNodeCardData }) {
           isActive
             ? "bg-brand text-primary-foreground border-brand shadow-lg shadow-brand/20"
             : isTarget
-            ? "bg-transparent border-2 border-brand text-foreground shadow-lg shadow-brand/30 ring-2 ring-brand/40"
+            ? "glass border-2 border-brand text-foreground shadow-lg shadow-brand/30 ring-2 ring-brand/40"
             : isOnPath
-            ? "bg-brand-subtle border-brand/60 text-foreground ring-1 ring-brand/40"
+            ? "glass border-brand/60 text-foreground ring-1 ring-brand/40"
             : isHighlighted
-            ? "bg-brand-subtle border-brand/50 text-foreground"
-            : "bg-card border-border text-foreground hover:border-brand/40"
+            ? "glass border-brand/50 text-foreground"
+            : "glass border-border text-foreground hover:border-brand/40"
         )}
       >
         <p className="font-semibold text-[11px] leading-tight">{node.title}</p>
@@ -128,7 +142,21 @@ const nodeTypes: NodeTypes = {
 type RoadmapStep = { skill: string; action: string; resource: string };
 type Roadmap = { summary: string; steps: RoadmapStep[]; estimatedMonths: number };
 
-export function CareerPathExplorer({
+export function CareerPathExplorer(props: {
+  nodes: CareerNode[];
+  edges: CareerEdge[];
+  currentRole: string | null;
+  seeking: string;
+  candidateSkillNames: string[];
+}) {
+  return (
+    <ReactFlowProvider>
+      <CareerPathExplorerInner {...props} />
+    </ReactFlowProvider>
+  );
+}
+
+function CareerPathExplorerInner({
   nodes: careerNodes,
   edges: careerEdges,
   currentRole,
@@ -141,12 +169,18 @@ export function CareerPathExplorer({
   seeking: string;
   candidateSkillNames: string[];
 }) {
+  const { fitBounds } = useReactFlow();
   const [selectedNode, setSelectedNode] = useState<CareerNode | null>(null);
   const [targetNodeId, setTargetNodeId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("career-explore-target") ?? null;
   });
-  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterCategory, setFilterCategory] = useState<string>(() => {
+    const match = careerNodes.find(
+      (n) => n.title.toLowerCase() === (currentRole?.toLowerCase() ?? "")
+    );
+    return match?.category ?? "all";
+  });
   const savedPositionsRef = useRef<Record<string, { x: number; y: number }>>(readSavedPositions());
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [roadmapLoading, setRoadmapLoading] = useState(false);
@@ -215,6 +249,31 @@ export function CareerPathExplorer({
     }
     return positions;
   }, [visibleNodes, categories]);
+
+  // Animate the viewport to frame the newly-filtered nodes whenever the category filter
+  // actually changes (not on initial mount - the declarative fitView prop on <ReactFlow>
+  // already handles that). Computes the bounding box from known grid positions instead of
+  // React Flow's measured node dimensions - calling fitView() right after a node swap
+  // races React Flow's ResizeObserver-based width/height measurement (confirmed via
+  // testing: nodesInitialized() reports true before the store's per-node bounds are
+  // actually usable, so fitView silently no-ops). fitBounds sidesteps that entirely.
+  const lastFitCategoryRef = useRef(filterCategory);
+  useEffect(() => {
+    if (lastFitCategoryRef.current === filterCategory) return;
+    lastFitCategoryRef.current = filterCategory;
+    const positions = visibleNodes
+      .map((n) => defaultPositions[n.id])
+      .filter((p): p is { x: number; y: number } => !!p);
+    if (positions.length === 0) return;
+    const minX = Math.min(...positions.map((p) => p.x));
+    const maxX = Math.max(...positions.map((p) => p.x)) + NODE_FIT_WIDTH;
+    const minY = Math.min(...positions.map((p) => p.y));
+    const maxY = Math.max(...positions.map((p) => p.y)) + NODE_FIT_HEIGHT;
+    fitBounds(
+      { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
+      { padding: 0.2, duration: 500 }
+    );
+  }, [filterCategory, visibleNodes, defaultPositions, fitBounds]);
 
   // Build RF nodes — apply saved positions so drag layout survives data updates
   const categoryNodes = useMemo(() => {
@@ -388,25 +447,26 @@ export function CareerPathExplorer({
       {/* Graph */}
       <div className="flex-1 relative">
         {/* Filter bar */}
-        <div className="absolute top-4 left-4 right-4 z-10 flex items-center gap-2 glass border border-border rounded-lg px-3 py-2 overflow-x-auto">
-          <span className="text-xs text-muted-foreground font-medium mr-1">Filter:</span>
-          {["all", ...categories].map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setFilterCategory(cat)}
+        <div className="absolute top-4 left-4 right-4 z-10 flex items-center gap-2 glass border border-border rounded-lg px-3 py-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger
               disabled={!!targetNodeId}
-              className={cn(
-                "text-xs px-2.5 py-1 rounded-md transition-colors font-medium",
-                filterCategory === cat
-                  ? "bg-brand text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-                !!targetNodeId && "opacity-40 pointer-events-none"
-              )}
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-40 disabled:pointer-events-none"
             >
-              {cat === "all" ? "All" : cat}
-            </button>
-          ))}
+              {filterCategory === "all" ? "All categories" : filterCategory}
+              <ChevronDownIcon className="size-3.5 text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuRadioGroup value={filterCategory} onValueChange={setFilterCategory}>
+                <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                {categories.map((cat) => (
+                  <DropdownMenuRadioItem key={cat} value={cat}>
+                    {cat}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
             type="button"
             onClick={() => {
@@ -456,7 +516,7 @@ export function CareerPathExplorer({
           maxZoom={1.5}
           style={{ background: flowColors.canvasBg }}
         >
-          <Background color={flowColors.dotBg} gap={24} />
+          <Background color={flowColors.dotBg} gap={22} size={2} />
           <Controls />
           <MiniMap
             nodeColor={(n) => {
