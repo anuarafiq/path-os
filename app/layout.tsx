@@ -78,23 +78,25 @@ export default function RootLayout({
         <style
           dangerouslySetInnerHTML={{
             __html: `
-              .glass {
-                position: relative;
-                background-color: color-mix(in oklch, var(--card) 30%, transparent);
-                backdrop-filter: url("#liquid-glass");
-                -webkit-backdrop-filter: url("#liquid-glass");
-                box-shadow:
-                  inset 1px 1px 0 -0.5px oklch(0 0 0 / 0.35),
-                  inset -1px -1px 0 -0.5px oklch(0 0 0 / 0.3),
-                  inset 0 0 4px 4px oklch(0 0 0 / 0.05),
-                  0 2px 6px oklch(0.16 0.004 258 / 0.08);
-              }
-              .dark .glass {
-                box-shadow:
-                  inset 1px 1px 0 -0.5px oklch(1 0 0 / 0.35),
-                  inset -1px -1px 0 -0.5px oklch(1 0 0 / 0.3),
-                  inset 0 0 4px 4px oklch(1 0 0 / 0.06),
-                  0 2px 6px oklch(0 0 0 / 0.3);
+              @layer base {
+                .glass {
+                  position: relative;
+                  background-color: color-mix(in oklch, var(--card) 30%, transparent);
+                  backdrop-filter: url("#liquid-glass");
+                  -webkit-backdrop-filter: url("#liquid-glass");
+                  box-shadow:
+                    inset 1px 1px 0 -0.5px oklch(0 0 0 / 0.35),
+                    inset -1px -1px 0 -0.5px oklch(0 0 0 / 0.3),
+                    inset 0 0 4px 4px oklch(0 0 0 / 0.05),
+                    0 2px 6px oklch(0.16 0.004 258 / 0.08);
+                }
+                .dark .glass {
+                  box-shadow:
+                    inset 1px 1px 0 -0.5px oklch(1 0 0 / 0.35),
+                    inset -1px -1px 0 -0.5px oklch(1 0 0 / 0.3),
+                    inset 0 0 4px 4px oklch(1 0 0 / 0.06),
+                    0 2px 6px oklch(0 0 0 / 0.3);
+                }
               }
             `,
           }}
