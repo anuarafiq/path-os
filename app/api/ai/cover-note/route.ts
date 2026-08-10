@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { groq, MODEL } from "@/lib/claude/client";
+import { MODEL } from "@/lib/claude/client";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -71,7 +71,7 @@ ${workExp}
 Return only the cover note text. No subject line, no "Dear Hiring Manager", no sign-off.`;
 
   const { text } = await generateText({
-    model: groq(MODEL),
+    model: MODEL,
     prompt,
     maxOutputTokens: 512,
   });

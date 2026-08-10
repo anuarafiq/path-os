@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { groq, MODEL } from "@/lib/claude/client";
+import { MODEL } from "@/lib/claude/client";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -35,7 +35,7 @@ ${roughNotes}
 Write 3-4 paragraphs covering: role overview, key responsibilities, requirements, and what the company offers. Plain text only — no markdown headers, no bullet points. Sound direct and specific. Return only the job description text.`;
 
   const { text } = await generateText({
-    model: groq(MODEL),
+    model: MODEL,
     prompt,
     maxOutputTokens: 800,
   });

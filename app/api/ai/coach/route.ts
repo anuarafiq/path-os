@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { groq, MODEL } from "@/lib/claude/client";
+import { MODEL } from "@/lib/claude/client";
 import { streamText, stepCountIs, convertToModelMessages, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -7,6 +7,7 @@ import { parseBody } from "@/lib/validate";
 import { findShortestPath } from "@/lib/career-path";
 import type { Database } from "@/types/database";
 import { CANDIDATE_ROUTES } from "@/lib/agent-routes";
+import { rateLimit } from "@/lib/rate-limit";
 
 type CareerNode = Database["public"]["Tables"]["career_nodes"]["Row"];
 type CareerEdge = Database["public"]["Tables"]["career_edges"]["Row"];
@@ -19,6 +20,14 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { ok, retryAfter } = rateLimit(`coach:${user.id}`, 30, 60 * 60_000);
+  if (!ok) {
+    return NextResponse.json(
+      { error: "You're sending messages too fast. Try again in a bit." },
+      { status: 429, headers: { "Retry-After": String(retryAfter) } }
+    );
+  }
 
   const parsed = await parseBody(req, Body);
   if ("error" in parsed) return parsed.error;
@@ -95,7 +104,7 @@ If you add or remove a skill, or update the profile, or apply for a job, confirm
 Use navigateTo when the user asks to go/see/open a specific page, or right after an action where showing them the result is the obvious next step (e.g. after applying, offer to take them to their applications).`;
 
   const result = streamText({
-    model: groq(MODEL),
+    model: MODEL,
     system: systemPrompt,
     messages: await convertToModelMessages(messages.slice(-10)),
     maxOutputTokens: 1024,

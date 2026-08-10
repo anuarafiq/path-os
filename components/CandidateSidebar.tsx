@@ -15,6 +15,7 @@ import {
   Award,
   Briefcase,
   ClipboardList,
+  ScanSearch,
 } from "lucide-react";
 
 const navItems = [
@@ -28,6 +29,7 @@ const dropdownExtraItems = [
   { href: "/portfolio",    label: "Portfolio",       icon: FolderKanban },
   { href: "/certificates", label: "Certificates",    icon: Award },
   { href: "/applications", label: "My Applications", icon: ClipboardList },
+  { href: "/ats-checker",  label: "ATS Checker",     icon: ScanSearch },
 ];
 
 export function CandidateSidebar({

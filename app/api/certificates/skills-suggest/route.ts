@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { groq, MODEL } from "@/lib/claude/client";
+import { MODEL } from "@/lib/claude/client";
 import { generateText } from "ai";
 import { z } from "zod";
 import { parseBody } from "@/lib/validate";
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
   try {
     const { text } = await generateText({
-      model: groq(MODEL),
+      model: MODEL,
       prompt,
       maxOutputTokens: 100,
     });

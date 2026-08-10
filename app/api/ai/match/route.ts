@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { groq, MODEL } from "@/lib/claude/client";
+import { MODEL } from "@/lib/claude/client";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -62,7 +62,7 @@ Return ONLY a JSON array (no markdown, no explanation) in this exact format:
 Score from 0-100. Only include candidates with score >= 40. Sort by score descending. Return max 5.`;
 
   const { text } = await generateText({
-    model: groq(MODEL),
+    model: MODEL,
     prompt,
     maxOutputTokens: 1024,
   });

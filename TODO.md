@@ -45,7 +45,7 @@
 - [ ] **Coach session persistence** - read/write `coach_sessions` so conversations survive reloads. Table exists, route never touches it. [Coach component stores messages in-memory only, no DB persistence]
 - [ ] **Profile completeness nudge** - if candidate profile is sparse (no skills, no bio), coach should prompt the user to fill their profile instead of giving hollow generic advice.
 - [ ] **Contextual follow-up suggestions** - after each coach response, render 2-3 smart follow-up chips based on the current topic. High demo value.
-- [ ] **Rate limiting on coach endpoint** - no guard against abuse. Each request hits Groq API. Add simple per-user request cap (e.g. 30 messages/hour via Supabase or upstash/ratelimit).
+- [x] **Rate limiting on coach endpoint** - per-user cap (30 messages/hour) on `/api/ai/coach` and `/api/ai/employer-coach`, reusing the existing `lib/rate-limit.ts` in-memory limiter (already used for `/api/demo` and `/p/` in `proxy.ts`). Returns 429 with `Retry-After`.
 - [ ] **Conversation export** - let users copy or download the chat as plain text for reference.
 - [x] **Public portfolio page** - shareable no-auth URL (e.g. `/p/[candidateId]`). Landing copy promises this.
 - [ ] **Auth profile creation fix** - move the post-signup `profiles` insert into a Supabase DB trigger / server action so a dropped connection doesn't strand the user.

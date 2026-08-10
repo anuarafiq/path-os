@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { groq, MODEL } from "@/lib/claude/client";
+import { MODEL } from "@/lib/claude/client";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -50,7 +50,7 @@ Rules:
 - summary must be under 40 words`;
 
   const { text } = await generateText({
-    model: groq(MODEL),
+    model: MODEL,
     prompt,
     maxOutputTokens: 800,
   });

@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import { groq, MODEL } from "@/lib/claude/client";
+import { MODEL } from "@/lib/claude/client";
 import { streamText, stepCountIs, convertToModelMessages, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/validate";
 import { EMPLOYER_ROUTES } from "@/lib/agent-routes";
+import { rateLimit } from "@/lib/rate-limit";
 
 const Body = z.object({
   messages: z.array(z.record(z.string(), z.unknown())).min(1).max(50),
@@ -14,6 +15,14 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { ok, retryAfter } = rateLimit(`employer-coach:${user.id}`, 30, 60 * 60_000);
+  if (!ok) {
+    return NextResponse.json(
+      { error: "You're sending messages too fast. Try again in a bit." },
+      { status: 429, headers: { "Retry-After": String(retryAfter) } }
+    );
+  }
 
   const parsed = await parseBody(req, Body);
   if ("error" in parsed) return parsed.error;
@@ -54,7 +63,7 @@ If you post a job, move an applicant, save a candidate, or update the profile, c
 Use navigateTo when the user asks to go/see/open a specific page, or right after an action where showing them the result is the obvious next step (e.g. after posting a job, offer to take them to the jobs list).`;
 
   const result = streamText({
-    model: groq(MODEL),
+    model: MODEL,
     system: systemPrompt,
     messages: await convertToModelMessages(messages.slice(-10)),
     maxOutputTokens: 1024,

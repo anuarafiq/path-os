@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { groq, MODEL } from "@/lib/claude/client";
+import { MODEL } from "@/lib/claude/client";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 
@@ -105,7 +105,7 @@ Return ONLY a JSON array (no markdown, no explanation) in this exact format:
   let suggestions: unknown[] = [];
   try {
     const { text } = await generateText({
-      model: groq(MODEL),
+      model: MODEL,
       prompt,
       maxOutputTokens: 1024,
     });
