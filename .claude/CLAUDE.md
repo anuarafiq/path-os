@@ -1,7 +1,7 @@
 # Path OS — Project Instructions
 
 ## Stack
-Next.js 16.2.7 (App Router, Turbopack) + Supabase + Groq API (llama-3.3-70b-versatile via @ai-sdk/groq) + Tailwind CSS v4 + shadcn/ui + React Flow
+Next.js 16.2.7 (App Router, Turbopack) + Supabase + Vercel AI Gateway (openai/gpt-5.6-luna via `ai@6`) + Tailwind CSS v4 + shadcn/ui + React Flow
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for feature implementation notes.
 

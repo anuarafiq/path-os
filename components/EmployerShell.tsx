@@ -27,7 +27,7 @@ export function EmployerShell({
         onToggleCoach={employerProfile ? () => setCoachOpen((o) => !o) : undefined}
       />
       <main className="flex-1 min-w-0 overflow-auto">
-        <div className="h-12 md:hidden" aria-hidden="true" />
+        <div className="h-16 md:hidden" aria-hidden="true" />
         {children}
       </main>
       {employerProfile && (

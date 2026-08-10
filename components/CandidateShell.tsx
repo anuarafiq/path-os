@@ -28,7 +28,7 @@ export function CandidateShell({
         onToggleCoach={candidateProfile ? () => setCoachOpen((o) => !o) : undefined}
       />
       <main className="flex-1 min-w-0 overflow-auto">
-        <div className="h-12 md:hidden" aria-hidden="true" />
+        <div className="h-16 md:hidden" aria-hidden="true" />
         <CoachPanelContext.Provider value={candidateProfile ? () => setCoachOpen(true) : null}>
           {children}
         </CoachPanelContext.Provider>

@@ -93,7 +93,7 @@ export function EmployerSidebar({
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border flex-col h-screen sticky top-0 bg-sidebar">
         <div className="px-5 py-5 border-b border-border">
-          <Logo size={80} className="rounded-md" />
+          <Logo size={144} className="rounded-md" />
           <p className="text-xs text-muted-foreground mt-1">Employer</p>
         </div>
         {navLinks}
@@ -109,9 +109,9 @@ export function EmployerSidebar({
       </aside>
 
       {/* Mobile top bar */}
-      <div className="flex md:hidden items-center justify-between px-4 h-12 border-b border-border bg-sidebar fixed top-0 left-0 right-0 z-30">
+      <div className="flex md:hidden items-center justify-between px-4 h-16 border-b border-border bg-sidebar fixed top-0 left-0 right-0 z-30">
         <div className="flex items-center gap-2">
-          <Logo size={32} className="rounded-sm" />
+          <Logo size={56} className="rounded-sm" />
           <span className="text-xs text-muted-foreground">Employer</span>
         </div>
         <div className="flex items-center gap-2">
@@ -156,7 +156,7 @@ export function EmployerSidebar({
       >
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <div>
-            <Logo size={40} className="rounded-sm" />
+            <Logo size={72} className="rounded-sm" />
             <p className="text-xs text-muted-foreground mt-1">Employer</p>
           </div>
           <button

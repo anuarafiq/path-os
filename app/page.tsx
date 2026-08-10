@@ -11,7 +11,7 @@ export default function Home() {
     <main className="relative z-10 min-h-screen flex flex-col">
       {/* Nav */}
       <nav className="flex items-center justify-between px-4 md:px-8 py-5 border-b border-border">
-        <Logo size={40} className="rounded-sm" />
+        <Logo size={112} className="rounded-sm" />
         <div className="flex items-center gap-4">
           <ThemeToggle />
           <Link
