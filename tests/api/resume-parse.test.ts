@@ -10,9 +10,8 @@ vi.mock("ai", () => ({
   generateText: vi.fn(),
 }));
 
-// Mock Groq client
+// Mock the AI Gateway client
 vi.mock("@/lib/claude/client", () => ({
-  groq: vi.fn(() => "mock-groq-model"),
   MODEL: "mock-model",
 }));
 
@@ -71,7 +70,7 @@ describe("POST /api/resumes/parse", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns parsed JSON from Groq response", async () => {
+  it("returns parsed JSON from the model response", async () => {
     vi.mocked(createClient).mockResolvedValue(makeSupabaseMock() as never);
     vi.mocked(generateText).mockResolvedValue({
       text: JSON.stringify({
@@ -101,7 +100,7 @@ describe("POST /api/resumes/parse", () => {
     expect(json.skills).toContain("Python");
   });
 
-  it("extracts JSON from Groq response wrapped in markdown fences", async () => {
+  it("extracts JSON from a model response wrapped in markdown fences", async () => {
     vi.mocked(createClient).mockResolvedValue(makeSupabaseMock() as never);
     const payload = { name: "Test User", skills: ["Go"], seeking: "full_time" };
     vi.mocked(generateText).mockResolvedValue({

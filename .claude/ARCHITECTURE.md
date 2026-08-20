@@ -8,7 +8,7 @@ Implementation details grouped by domain. Read this when working on a specific a
 
 - Signup redirect: employers → `/employer/dashboard`, candidates → `/onboarding` — prevents employers landing on candidate onboarding. `app/(auth)/signup/page.tsx`
 - `useSearchParams()` in signup page wrapped in Suspense boundary — Next.js 16 requirement
-- Resume auto-fill at `/onboarding` — pre-screen (`showImport` state, default `true`) renders before the wizard. Candidate pastes CV text; `POST /api/resumes/parse` calls Groq (`generateText`, maxOutputTokens 2048) returns structured JSON. Client merges into all wizard state vars; skills matched case-insensitively against `allSkills` pre-selected at "mid" level. "Skip, fill manually" bypasses. Input capped at 20,000 chars. Double-parse fallback with regex `/\{[\s\S]*\}/`.
+- Resume auto-fill at `/onboarding` — pre-screen (`showImport` state, default `true`) renders before the wizard. Candidate pastes CV text; `POST /api/resumes/parse` calls the AI Gateway model (`generateText`, maxOutputTokens 2048) returns structured JSON. Client merges into all wizard state vars; skills matched case-insensitively against `allSkills` pre-selected at "mid" level. "Skip, fill manually" bypasses. Input capped at 20,000 chars. Double-parse fallback with regex `/\{[\s\S]*\}/`.
 - Resume file upload — separate from the text-paste auto-fill above (no extraction, just storage). `components/ResumeUpload.tsx` (shared by onboarding Step 0 and `/profile/edit`) uploads to the private `resumes` Supabase Storage bucket at `{user_id}/resume.{ext}` (upsert on replace, so no orphaned objects). Client validates extension (pdf/doc/docx) and size (≤5MB) before uploading. The component only performs the storage call; the resulting path is held in the parent's state and written to `candidate_profiles.resume_url` as part of the existing Finish/Save action, same as every other field. Viewing generates a 60s signed URL on click rather than exposing a public URL.
 
 ---
@@ -30,7 +30,7 @@ Implementation details grouped by domain. Read this when working on a specific a
 - Non-token dark-specific CSS (scrollbar thumb colors, the `input[type="month"]`/`type="date"` calendar picker icon filter) moved from unconditioned rules to `.dark`-scoped overrides on top of new light-mode defaults, same `@layer base` block in `globals.css`.
 - `components/ThemeToggle.tsx` — icon-only button in the sidebar footer, sharing a flex row with "Sign out" rather than a second stacked full-width text row (`CandidateSidebar.tsx`, `EmployerSidebar.tsx` — both render the same shared `navContent` block for desktop `<aside>` and the mobile drawer, so one insertion covers both). Also in the landing page nav (`app/page.tsx`). Hydration-guarded against `useTheme()`'s SSR timing via the same `useSyncExternalStore` pattern as `PageBeams` (not `setState` in an effect, which the React Compiler lint flags).
 
-#### Theme change: iris wipe (overdrive pass)
+### Theme change: iris wipe (overdrive pass)
 
 Clicking the toggle expands the incoming theme out of the button as a circle, over 600ms.
 
@@ -83,7 +83,7 @@ Clicking the toggle expands the incoming theme out of the button as a circle, ov
 
 ---
 
-## AI / Groq Routes
+## AI / Model Routes
 
 All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude/client.ts` exports `MODEL` (`openai/gpt-5.6-luna`) - a plain `provider/model` string routed automatically through the Vercel AI Gateway (`ai@6`), no provider SDK or API key needed. Auth is `VERCEL_OIDC_TOKEN`, provisioned via `vercel link` + `vercel env pull .env.local` (~24h token, re-pull when it expires). Previously Groq (`llama-3.3-70b-versatile` via `@ai-sdk/groq`); moved off it because Luna is cheaper and its tool-calling doesn't hit the failure modes documented below.
 
@@ -93,12 +93,12 @@ All AI routes use Vercel AI SDK `streamText`/`generateText`. Client: `lib/claude
 | `/api/ai/employer-coach` | POST | employer | Same rate limit as `/api/ai/coach` (key `employer-coach:${user.id}`, separate bucket). Same shape otherwise. 7 tools: `listJobs`, `listApplicants`, `createJob`, `updateApplicationStatus`, `saveCandidateToPool`, `updateEmployerProfile`, `navigateTo` (whitelisted to `EMPLOYER_ROUTES`). Every mutating tool does a deterministic pre-check in code before touching the DB (e.g. `updateApplicationStatus` verifies the application's job belongs to the calling employer before allowing the move) rather than trusting the model to have checked - see the Groq tool-calling gotcha in `.claude/CLAUDE.md` (Luna doesn't reproduce it in testing, but the pre-checks stay as defense in depth) |
 | `/api/ai/cover-note` | POST | candidate | maxOutputTokens 512, takes `{ jobId }` |
 | `/api/ai/skill-gap` | POST | candidate | maxOutputTokens 800, takes `{ currentRole, targetRole, missingSkills }` |
-| `/api/ai/job-fit` | POST | candidate | **no Groq call** — deterministic case-insensitive skill-overlap scoring (`matched/required * 100`, empty `required_skills` → neutral 50) with a templated one-sentence summary; returns `{ score: 0-100, summary }` |
+| `/api/ai/job-fit` | POST | candidate | **no model call** — deterministic case-insensitive skill-overlap scoring (`matched/required * 100`, empty `required_skills` → neutral 50) with a templated one-sentence summary; returns `{ score: 0-100, summary }` |
 | `/api/ai/jd-writer` | POST | employer | maxOutputTokens 800, takes `{ title, location, employmentType, skills, roughNotes }` |
 | `/api/ai/re-engage` | POST | employer | deterministically excludes candidates who've already applied to any of the employer's open jobs (queried before prompting, not left to the model - see Gotchas) before asking the LLM to rank fits; text+regex-parsed JSON output; wrapped in try/catch, returns `{ suggestions: [] }` on any generation failure; returns up to 5 `ReEngageSuggestion[]` |
 | `/api/certificates/coursera` | POST | — | server-side fetch + OG tag parse, SSRF-guarded |
-| `/api/certificates/skills-suggest` | POST | — | keyword pre-filter first: regex-matches the cert `title`+`institution` against all 37 canonical `skills.name` values (lookaround boundaries, not `\b`, so `Node.js`/`CI/CD` match correctly and `Go` doesn't false-match inside `Google`); only calls Groq as a fallback when the keyword pass finds zero matches; up to 6 skills either way |
-| `/api/resumes/parse` | POST | candidate | Groq, maxOutputTokens 2048 |
+| `/api/certificates/skills-suggest` | POST | — | keyword pre-filter first: regex-matches the cert `title`+`institution` against all 37 canonical `skills.name` values (lookaround boundaries, not `\b`, so `Node.js`/`CI/CD` match correctly and `Go` doesn't false-match inside `Google`); only calls the model as a fallback when the keyword pass finds zero matches; up to 6 skills either way |
+| `/api/resumes/parse` | POST | candidate | maxOutputTokens 2048 |
 
 ---
 
@@ -124,7 +124,7 @@ Zero-motion list → the app's existing house vocabulary, reused rather than rei
 ### ATS Checker (`/ats-checker`)
 - `page.tsx` (server) — fetches `candidate_profiles.resume_url` and the open `jobs` list, passes `hasPdfResume` (extension check) + `jobs` to `AtsCheckerForm.tsx`.
 - `AtsCheckerForm.tsx` (client) — two independent input toggles: resume source (uploaded PDF vs pasted text) and job source (pick an open Path OS listing vs paste an external JD). Posts to `/api/ai/ats-check`.
-- `/api/ai/ats-check/route.ts` — text-only resume input goes through Groq (`lib/claude/client.ts`, consistent with the rest of the app). A stored PDF resume goes through Gemini (`lib/claude/google-client.ts`, `@ai-sdk/google`) as a native file part, since Groq/Llama has no PDF input and no PDF-parsing library is installed — Gemini reads the file directly and can also flag layout issues (tables, multi-column, text-in-images) that plain text extraction would lose. Same "return ONLY JSON + regex fallback" parse pattern as `/api/resumes/parse`. Format-issue checking is PDF-only; DOC/DOCX uploads are told to paste text instead rather than adding a parsing library for one format.
+- `/api/ai/ats-check/route.ts` — text-only resume input goes through the shared AI Gateway client (`lib/claude/client.ts`, consistent with the rest of the app). A stored PDF resume goes through Gemini (`lib/claude/google-client.ts`, `@ai-sdk/google`) as a native file part, since the text model has no PDF input and no PDF-parsing library is installed — Gemini reads the file directly and can also flag layout issues (tables, multi-column, text-in-images) that plain text extraction would lose. Same "return ONLY JSON + regex fallback" parse pattern as `/api/resumes/parse`. Format-issue checking is PDF-only; DOC/DOCX uploads are told to paste text instead rather than adding a parsing library for one format.
 - Returns `{ score, matchedKeywords, missingKeywords, formatIssues, summary }`. `formatIssues` is always `[]` for the text-input path (nothing to check layout on).
 - Nav entry lives in `CandidateSidebar.tsx`'s `dropdownExtraItems` (profile dropdown), not the top-level nav bar, alongside Portfolio/Certificates/Applications.
 
@@ -204,7 +204,7 @@ Education, certificates and work experience are no longer three sections. They m
 
 ### Security
 - **HTTP headers** set in `next.config.ts` `headers()` for all routes: CSP (conservative — `'unsafe-inline'` for style/script, `frame-ancestors 'none'`), X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, HSTS.
-- **Input validation:** AI/cert API routes validate the request body with Zod via `lib/validate.ts` `parseBody(req, schema)` (returns `{ data }` or a 400 `{ error }`). Free-text fields fed to the LLM are length-capped to bound Groq cost / DoS.
+- **Input validation:** AI/cert API routes validate the request body with Zod via `lib/validate.ts` `parseBody(req, schema)` (returns `{ data }` or a 400 `{ error }`). Free-text fields fed to the LLM are length-capped to bound AI Gateway cost / DoS.
 - **Rate limiting:** `lib/rate-limit.ts` — fixed-window, in-memory `Map`. Per-instance only (not shared across serverless/edge); swap for Upstash/Redis if durable limiting is needed.
 
 ### Coach

@@ -3,7 +3,7 @@
 ## Blockers (nothing renders without these)
 
 - [x] **Supabase project** - create project, run both migrations, add `.env.local` (URL + anon key). App pages can't render until this exists.
-- [x] **Groq API key** - switched from Anthropic to Groq (`llama-3.3-70b-versatile`). Add `GROQ_API_KEY` to env.
+- [x] **Groq API key** - switched from Anthropic to Groq (`llama-3.3-70b-versatile`). Add `GROQ_API_KEY` to env. Later migrated again to the Vercel AI Gateway (`openai/gpt-5.6-luna`, `VERCEL_OIDC_TOKEN`) - see `context/ARCHITECTURE.md`.
 - [x] **Demo / mock data mode** - seed a candidate + employer + jobs + applications so the full flow is demoable, ideally with one-click demo login. Needed for Intent Form UI review.
 
 ## Critical (core loop is broken without these)

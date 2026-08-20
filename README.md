@@ -7,7 +7,7 @@ A two-sided career platform that matches candidates to opportunities and helps e
 ## Features
 
 ### Candidate side
-- **Onboarding** - structured intake of education, work history, skills, and portfolio links; resume upload with AI-parsed auto-fill (paste or upload a CV, Groq extracts structured fields)
+- **Onboarding** - structured intake of education, work history, skills, and portfolio links; resume upload with AI-parsed auto-fill (paste or upload a CV, the AI Gateway model extracts structured fields)
 - **Profile editing** - dedicated editors for basic info, education, work experience, skills, and portfolio items post-onboarding
 - **Career exploration** - interactive graph of roles and career paths with salary benchmarking
 - **AI coach (agentic)** - not a canned Q&A bot. Runs a real tool-calling loop, see [Agentic Features](#agentic-features) below.
@@ -32,7 +32,7 @@ A two-sided career platform that matches candidates to opportunities and helps e
 
 ## Agentic Features
 
-The Coach (candidate side) and its employer counterpart are the genuinely agentic parts of the app. Each runs a real tool-calling loop (Vercel AI SDK `streamText`, `stopWhen: stepCountIs(5)`) against Groq `llama-3.3-70b-versatile` - the model decides which tools to call, in what order, and reasons over the result before replying. Everything else labeled "AI" in this app (fit scoring, extraction, re-engagement) is a single prompted LLM call, not a loop.
+The Coach (candidate side) and its employer counterpart are the genuinely agentic parts of the app. Each runs a real tool-calling loop (Vercel AI SDK `streamText`, `stopWhen: stepCountIs(5)`) against a model routed through the Vercel AI Gateway (`openai/gpt-5.6-luna`, previously Groq `llama-3.3-70b-versatile`) - the model decides which tools to call, in what order, and reasons over the result before replying. Everything else labeled "AI" in this app (fit scoring, extraction, re-engagement) is a single prompted LLM call, not a loop.
 
 ### Candidate Coach tools
 Route: `app/api/ai/coach/route.ts`. Chat UI: `components/CoachChat.tsx`.
@@ -61,8 +61,8 @@ Log in as the demo candidate (see [Demo Mode](#demo-mode)), open **Coach**, and 
 - "Take me to my applications page." (`navigateTo`)
 
 ### Limitations
-- **Groq tool-calling is unreliable for anything conditional or structured.** A forced "submit" tool for final structured output previously caused `400 tool_use_failed`; a tool the model was *instructed* to call before every item was silently skipped for at least one item in live testing. Correctness-critical logic (e.g. re-engagement's "don't suggest jobs already applied to") is done deterministically in code, never left to the model deciding to call a check tool.
-- **12,000 tokens/min Groq rate limit** on this plan - repeated testing in a short window can trip `429 rate_limit_exceeded`.
+- **Correctness-critical logic is always deterministic, never delegated to a check tool.** Originally forced by Groq's unreliable tool-calling (a forced "submit" tool for final structured output caused `400 tool_use_failed`; a tool the model was *instructed* to call before every item was silently skipped for at least one item in live testing). The current Vercel AI Gateway model (`openai/gpt-5.6-luna`) doesn't reproduce those failures, but the safeguard (e.g. re-engagement's "don't suggest jobs already applied to") stays as defense in depth.
+- **Rate limits:** hit Groq's 12,000 tokens/min cap during testing under the previous provider; current Vercel AI Gateway limits not yet stress-tested.
 - **No conversation persistence** - the Coach has no memory across sessions; each chat starts fresh.
 - **No abuse guard** - no per-user request cap on the Coach endpoint yet (tracked in [Known Issues](#known-issues--decisions)).
 - **`stepCountIs(5)`** caps the tool loop at 5 steps per turn - a task needing more chained calls will stop short and hand back to the user instead of continuing silently.
@@ -71,15 +71,15 @@ Log in as the demo candidate (see [Demo Mode](#demo-mode)), open **Coach**, and 
 
 - **Frontend:** Next.js 16.2.7 (App Router, Turbopack), React 19, Tailwind CSS v4, shadcn/ui
 - **Backend:** Next.js API routes, Supabase (PostgreSQL + Auth)
-- **AI:** Groq API (`llama-3.3-70b-versatile`) via Vercel AI SDK
+- **AI:** Vercel AI Gateway (`openai/gpt-5.6-luna`) via Vercel AI SDK (`ai@6`); Google Gemini for PDF resume parsing
 - **Visualization:** React Flow for career graph
-- **Design:** Dark mode by default with a light mode toggle (`next-themes`), amber/gold accent, trading-terminal aesthetic
+- **Design:** Light mode by default with a full dark mode toggle (`next-themes`), cyan brand accent
 
 ## Setup
 
 ### Prerequisites
 1. **Supabase project** - create a project at [supabase.com](https://supabase.com)
-2. **Groq API key** - get one at [console.groq.com](https://console.groq.com)
+2. **Vercel account linked to this project** - AI features route through the Vercel AI Gateway, authenticated via an OIDC token, not a per-provider API key
 3. **Node.js 20.9+** and npm
 
 ### Installation
@@ -91,13 +91,12 @@ cd path-os
 npm install
 ```
 
-2. Set up environment variables (`.env.local`):
+2. Set up environment variables:
+```bash
+vercel link
+vercel env pull .env.local
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-GROQ_API_KEY=your-groq-key
-```
+Pulls `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `VERCEL_OIDC_TOKEN` (the AI Gateway auth token, expires ~24h - re-run `vercel env pull` when it does) into `.env.local`.
 
 3. Run Supabase migrations:
 ```bash
@@ -163,11 +162,11 @@ app/
 - **Auth flow:** Post-signup profile creation should migrate to a DB trigger (currently sync server action)
 - **Coach rate limiting:** No abuse guard; add per-user request cap before production
 
-See [TODO.md](./TODO.md) for the full roadmap and feature blockers.
+See [TODO.md](./TODO.md) for the full roadmap and feature blockers, or [`context/TRACKER.md`](./context/TRACKER.md) for the same backlog in status-tracker form.
 
 ## Project Status
 
-- **Blockers resolved:** Supabase, Groq integration, demo mode
+- **Blockers resolved:** Supabase, AI Gateway integration, demo mode
 - **Core loop complete:** job posting, apply flow, application tracking, pipeline, re-engagement, resume auto-fill, profile editing
 - **Remaining:** saved jobs/bookmarks, coach session persistence, rate limiting on coach endpoint, employer pipeline analytics
 
@@ -176,11 +175,11 @@ For detailed feature status, see [TODO.md](./TODO.md).
 ## Design Standards
 
 All frontend work follows these constraints:
-- Dark mode by default (with light mode toggle) - amber/gold accent on deep navy-black
+- Light mode by default (with a full dark mode toggle) - cyan brand accent, purple/pink/amber/mint secondary family
 - Typography: Bricolage Grotesque (headings) + Geist Sans (body)
 - No side-stripe card borders, no gradient text
 - OKLCH color space for all custom colors
-- Salary/metric numbers use tabular-nums for terminal aesthetic
+- Salary/metric numbers use tabular-nums
 
 See `.impeccable.md` for the full design system.
 
@@ -198,4 +197,4 @@ npm run seed:demo  # Seed demo candidate + employer data locally
 
 ## Contributing
 
-This is a hackathon project with tight deadlines, originally built as the Talentbank Hackathon 2026 entry and later rebranded to Path OS. See [CLAUDE.md](./.claude/CLAUDE.md) for project-specific instructions and [TODO.md](./TODO.md) for the task list.
+This is a hackathon project with tight deadlines, originally built as the Talentbank Hackathon 2026 entry and later rebranded to Path OS. See [`context/`](./context/) for product/architecture/schema/flow docs, [`.claude/CLAUDE.md`](./.claude/CLAUDE.md) for stack/design-token/gotcha reference, [`.claude/ARCHITECTURE.md`](./.claude/ARCHITECTURE.md) for feature-by-feature implementation detail, and [TODO.md](./TODO.md) for the task list.

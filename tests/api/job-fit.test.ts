@@ -4,20 +4,11 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
-vi.mock("ai", () => ({
-  generateText: vi.fn(),
-}));
-
-vi.mock("@/lib/claude/client", () => ({
-  groq: vi.fn(() => "mock-groq-model"),
-  MODEL: "mock-model",
-}));
-
 import { createClient } from "@/lib/supabase/server";
-import { generateText } from "ai";
 import { POST } from "@/app/api/ai/job-fit/route";
 
 const mockUser = { id: "user-1" };
+const VALID_JOB_ID = "11111111-1111-4111-8111-111111111111";
 
 function makeSupabaseMock({
   user = mockUser,
@@ -46,6 +37,13 @@ function makeSupabaseMock({
   };
 }
 
+function makeRequest(jobId: unknown) {
+  return new Request("http://localhost/api/ai/job-fit", {
+    method: "POST",
+    body: JSON.stringify({ jobId }),
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -54,73 +52,106 @@ describe("POST /api/ai/job-fit", () => {
   it("returns 401 when not authenticated", async () => {
     vi.mocked(createClient).mockResolvedValue(makeSupabaseMock({ user: null as never }) as never);
 
-    const req = new Request("http://localhost/api/ai/job-fit", {
-      method: "POST",
-      body: JSON.stringify({ jobId: "job-1" }),
-    });
-
-    const res = await POST(req);
+    const res = await POST(makeRequest(VALID_JOB_ID));
     expect(res.status).toBe(401);
   });
 
+  it("returns 400 when jobId is not a UUID", async () => {
+    vi.mocked(createClient).mockResolvedValue(makeSupabaseMock() as never);
+
+    const res = await POST(makeRequest("not-a-uuid"));
+    expect(res.status).toBe(400);
+  });
+
   it("returns 404 when job not found", async () => {
-    vi.mocked(createClient).mockResolvedValue(
-      makeSupabaseMock({ job: null, profile: { id: "p-1" }, candidate: { id: "c-1", current_role: "Dev", seeking: "full_time", years_exp: 2, candidate_skills: [] } }) as never
-    );
+    vi.mocked(createClient).mockResolvedValue(makeSupabaseMock({ job: null }) as never);
 
-    const req = new Request("http://localhost/api/ai/job-fit", {
-      method: "POST",
-      body: JSON.stringify({ jobId: "missing-job" }),
-    });
-
-    const res = await POST(req);
+    const res = await POST(makeRequest(VALID_JOB_ID));
     expect(res.status).toBe(404);
   });
 
-  it("returns score and summary from Groq", async () => {
+  it("returns 404 when profile not found", async () => {
     vi.mocked(createClient).mockResolvedValue(
       makeSupabaseMock({
-        job: { title: "Frontend Dev", required_skills: ["React"], location: "KL", employment_type: "full_time", salary_min: 5000, salary_max: 8000 },
-        profile: { id: "p-1" },
-        candidate: { current_role: "Junior Dev", seeking: "full_time", years_exp: 2, candidate_skills: [{ skills: { name: "React" } }] },
+        job: { title: "Frontend Dev", required_skills: ["React"] },
+        profile: null,
       }) as never
     );
-    vi.mocked(generateText).mockResolvedValue({
-      text: JSON.stringify({ score: 85, summary: "Strong React skills match well." }),
-    } as never);
 
-    const req = new Request("http://localhost/api/ai/job-fit", {
-      method: "POST",
-      body: JSON.stringify({ jobId: "job-1" }),
-    });
+    const res = await POST(makeRequest(VALID_JOB_ID));
+    expect(res.status).toBe(404);
+  });
 
-    const res = await POST(req);
+  it("returns 404 when candidate profile not found", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabaseMock({
+        job: { title: "Frontend Dev", required_skills: ["React"] },
+        profile: { id: "p-1" },
+        candidate: null,
+      }) as never
+    );
+
+    const res = await POST(makeRequest(VALID_JOB_ID));
+    expect(res.status).toBe(404);
+  });
+
+  it("scores a full skill match at 100", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabaseMock({
+        job: { title: "Frontend Dev", required_skills: ["React"] },
+        profile: { id: "p-1" },
+        candidate: { years_exp: 2, candidate_skills: [{ skills: { name: "React" } }] },
+      }) as never
+    );
+
+    const res = await POST(makeRequest(VALID_JOB_ID));
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.score).toBe(85);
+    expect(json.score).toBe(100);
     expect(typeof json.summary).toBe("string");
   });
 
-  it("score is between 0 and 100", async () => {
+  it("scores a partial skill match proportionally", async () => {
     vi.mocked(createClient).mockResolvedValue(
       makeSupabaseMock({
-        job: { title: "Data Scientist", required_skills: ["Python", "ML"], location: "Remote", employment_type: "full_time", salary_min: 8000, salary_max: 12000 },
+        job: { title: "Data Scientist", required_skills: ["Python", "ML"] },
         profile: { id: "p-1" },
-        candidate: { current_role: "Analyst", seeking: "full_time", years_exp: 1, candidate_skills: [] },
+        candidate: { years_exp: 1, candidate_skills: [{ skills: { name: "Python" } }] },
       }) as never
     );
-    vi.mocked(generateText).mockResolvedValue({
-      text: JSON.stringify({ score: 42, summary: "Some skill gaps in ML." }),
-    } as never);
 
-    const req = new Request("http://localhost/api/ai/job-fit", {
-      method: "POST",
-      body: JSON.stringify({ jobId: "job-2" }),
-    });
-
-    const res = await POST(req);
+    const res = await POST(makeRequest(VALID_JOB_ID));
     const json = await res.json();
+    expect(json.score).toBe(50);
     expect(json.score).toBeGreaterThanOrEqual(0);
     expect(json.score).toBeLessThanOrEqual(100);
+  });
+
+  it("returns a neutral score when the job lists no required skills", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabaseMock({
+        job: { title: "Generalist", required_skills: [] },
+        profile: { id: "p-1" },
+        candidate: { years_exp: 3, candidate_skills: [] },
+      }) as never
+    );
+
+    const res = await POST(makeRequest(VALID_JOB_ID));
+    const json = await res.json();
+    expect(json.score).toBe(50);
+  });
+
+  it("matches skills case-insensitively", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabaseMock({
+        job: { title: "Backend Dev", required_skills: ["node.js"] },
+        profile: { id: "p-1" },
+        candidate: { years_exp: 4, candidate_skills: [{ skills: { name: "Node.js" } }] },
+      }) as never
+    );
+
+    const res = await POST(makeRequest(VALID_JOB_ID));
+    const json = await res.json();
+    expect(json.score).toBe(100);
   });
 });
