@@ -11,6 +11,8 @@ const Body = z.object({
   messages: z.array(z.record(z.string(), z.unknown())).min(1).max(50),
 });
 
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -68,6 +70,9 @@ Use navigateTo when the user asks to go/see/open a specific page, or right after
     messages: await convertToModelMessages(messages.slice(-10)),
     maxOutputTokens: 1024,
     stopWhen: stepCountIs(5),
+    onError: ({ error }) => {
+      console.error("[employer-coach] streamText error:", error);
+    },
     tools: {
       listJobs: {
         description: "List this employer's job postings",

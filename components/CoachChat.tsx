@@ -41,7 +41,7 @@ export function CoachChat({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const navigatedToolCallIds = useRef(new Set<string>());
 
-  const { messages, sendMessage, status, error } = useChat({
+  const { messages, sendMessage, status, error, regenerate } = useChat({
     transport: new DefaultChatTransport({ api: "/api/ai/coach" }),
   });
 
@@ -214,7 +214,16 @@ export function CoachChat({
           );
         })}
         {error && (
-          <p className="text-sm text-destructive text-center">Something went wrong. Please try again.</p>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-sm text-destructive text-center">Something went wrong.</p>
+            <button
+              type="button"
+              onClick={() => regenerate()}
+              className="text-xs font-medium text-brand hover:underline"
+            >
+              Retry
+            </button>
+          </div>
         )}
         <div ref={bottomRef} />
       </div>
