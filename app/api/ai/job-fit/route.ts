@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/validate";
+import { computeJobFit } from "@/lib/ai/candidate-fit";
 
 const Body = z.object({ jobId: z.string().uuid() });
 
@@ -41,35 +42,13 @@ export async function POST(req: Request) {
   const candidateSkillNames = (candidate.candidate_skills as unknown as { skills: { name: string } | null }[])
     ?.map((s) => s.skills?.name)
     .filter((n): n is string => Boolean(n)) ?? [];
-  const candidateSkillsLower = candidateSkillNames.map((s) => s.toLowerCase());
 
-  const requiredSkills: string[] = job.required_skills ?? [];
-
-  if (requiredSkills.length === 0) {
-    return NextResponse.json({
-      score: 50,
-      summary: `${job.title} doesn't list specific required skills, so fit can't be scored on skills.`,
-    });
-  }
-
-  const matched = requiredSkills.filter((rs) => candidateSkillsLower.includes(rs.toLowerCase()));
-  const missing = requiredSkills.filter((rs) => !candidateSkillsLower.includes(rs.toLowerCase()));
-  const score = Math.round((matched.length / requiredSkills.length) * 100);
-
-  const expClause = candidate.years_exp
-    ? ` with ${candidate.years_exp} year${candidate.years_exp === 1 ? "" : "s"} of experience`
-    : "";
-
-  let summary: string;
-  if (candidateSkillNames.length === 0) {
-    summary = `No skills on file to compare against ${job.title}'s required skills (${requiredSkills.join(", ")}).`;
-  } else if (matched.length === 0) {
-    summary = `None of the candidate's skills match ${job.title}'s required skills (${requiredSkills.join(", ")}).`;
-  } else if (missing.length === 0) {
-    summary = `Strong fit, has all required skills (${matched.join(", ")})${expClause}.`;
-  } else {
-    summary = `Matches ${matched.length} of ${requiredSkills.length} required skills (${matched.join(", ")}); missing ${missing.join(", ")}${expClause}.`;
-  }
+  const { score, summary } = computeJobFit(
+    job.title,
+    job.required_skills ?? [],
+    candidateSkillNames,
+    candidate.years_exp,
+  );
 
   return NextResponse.json({ score, summary });
 }

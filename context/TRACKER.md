@@ -15,7 +15,7 @@ Update this file after every meaningful implementation change.
 - Auth (signup/login, role-based redirect), onboarding wizard with AI resume auto-fill, resume file upload/storage
 - Candidate: dashboard, job board with search/filters, apply flow with AI cover notes, fit scoring, applications tracking, career explorer (graph, personalized path highlighting, skill-gap roadmap), certificates (Coursera parse + skill suggestions), full profile editing (basic info, education, work exp, skills, portfolio items), public portfolio page with visibility toggle
 - Employer: setup/profile, job posting (with AI JD polish), talent search + talent pools, pipeline board (drag + button stage moves), re-engage AI suggestions with deterministic already-applied guardrail
-- AI Coach (candidate) and Hiring Assistant (employer) - agentic multi-step tool-calling side panels, rate-limited 30 msg/hour/user
+- AI Coach (candidate) and Hiring Assistant (employer) - agentic multi-step tool-calling side panels, rate-limited 30 msg/hour/user. Candidate coach reaches the one-shot AI features conversationally: `scoreJobFit`, `draftCoverLetter`, `analyzeSkillGap` tools share logic with the `/api/ai/job-fit`, `/cover-note`, `/skill-gap` routes via `lib/ai/candidate-fit.ts` (single source of truth). ATS/resume-check tool deferred.
 - Demo mode - one-click seeded candidate + employer accounts, idempotent seeding
 - Design system pass: light/dark theme toggle, full token architecture, motion/animation layer (iris wipe, career spine, route reveal, pipeline drag physics)
 - Security hardening: CSP + security headers, RLS + grants on every table, SECURITY DEFINER RPCs for cross-boundary public reads, rate limiting on AI + public routes

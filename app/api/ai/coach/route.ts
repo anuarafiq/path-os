@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { MODEL } from "@/lib/claude/client";
-import { streamText, stepCountIs, convertToModelMessages, type UIMessage } from "ai";
+import { streamText, generateText, stepCountIs, convertToModelMessages, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/validate";
@@ -8,6 +8,14 @@ import { findShortestPath } from "@/lib/career-path";
 import type { Database } from "@/types/database";
 import { CANDIDATE_ROUTES } from "@/lib/agent-routes";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  computeJobFit,
+  buildCoverNotePrompt,
+  buildSkillGapPrompt,
+  parseRoadmap,
+  type CoverNoteJob,
+  type CoverNoteCandidate,
+} from "@/lib/ai/candidate-fit";
 
 type CareerNode = Database["public"]["Tables"]["career_nodes"]["Row"];
 type CareerEdge = Database["public"]["Tables"]["career_edges"]["Row"];
@@ -64,6 +72,10 @@ export async function POST(req: Request) {
     .filter(Boolean)
     .join(", ");
 
+  const candidateSkillNames = (skills ?? [])
+    .map((s) => ((s.skills as unknown) as { name: string } | null)?.name)
+    .filter((n): n is string => Boolean(n));
+
   const qualSummary = quals
     ?.map((q) => `${q.title} at ${q.institution}${q.grade ? ` (${q.grade})` : ""}`)
     .join("; ");
@@ -100,8 +112,10 @@ Content rules:
 - You can mention salary ranges in MYR when relevant (e.g., "Senior Software Engineers in KL typically earn RM 9,000–15,000/month")
 - Do not repeat the user's profile back to them unless relevant
 
-You are equipped with tools to query open jobs, fetch salary benchmarks, add skills, remove skills, update the candidate's profile fields, apply to jobs directly on their behalf, look up career path options toward a target role, check the status of the user's job applications, and navigate them to a page in the app.
+You are equipped with tools to query open jobs, fetch salary benchmarks, score how well the candidate fits a specific job, draft a tailored cover note for a job, build a learning roadmap toward a target role, add skills, remove skills, update the candidate's profile fields, apply to jobs directly on their behalf, look up career path options toward a target role, check the status of the user's job applications, and navigate them to a page in the app.
 Always explain when you are running a tool and present the results clearly to the user.
+When a tool returns generated content — a cover note from draftCoverLetter — present it verbatim in a markdown code block. Do not paraphrase or shorten it.
+For analyzeSkillGap, first obtain the missing skills (from getCareerPathOptions' skillGaps toward the target role, or from the gap between the candidate's skills and a target job's required skills), then pass them in.
 If you add or remove a skill, or update the profile, or apply for a job, confirm it clearly to the user.
 Use navigateTo when the user asks to go/see/open a specific page, or right after an action where showing them the result is the obvious next step (e.g. after applying, offer to take them to their applications).`;
 
@@ -428,6 +442,90 @@ Use navigateTo when the user asks to go/see/open a specific page, or right after
 
           return { success: true, message: `Successfully removed "${skillName}" from your profile.` };
         }
+      },
+
+      scoreJobFit: {
+        description: "Score how well the candidate's skills fit a specific open job, by Job ID. Returns a 0-100 score and a short summary of matched and missing skills. Use findMatchingJobs first to get a Job ID.",
+        inputSchema: z.object({
+          jobId: z.string().describe("The UUID of the job to score fit against"),
+        }),
+        execute: async ({ jobId }) => {
+          const { data: job } = await supabase
+            .from("jobs")
+            .select("title, required_skills")
+            .eq("id", jobId)
+            .single();
+          if (!job) return { error: "Job not found." };
+
+          return computeJobFit(
+            job.title,
+            job.required_skills ?? [],
+            candidateSkillNames,
+            candidate?.years_exp ?? null,
+          );
+        },
+      },
+
+      draftCoverLetter: {
+        description: "Write a tailored cover note for a specific open job, by Job ID, using the candidate's profile and work history. Use findMatchingJobs first to get a Job ID. Present the returned note verbatim to the user.",
+        inputSchema: z.object({
+          jobId: z.string().describe("The UUID of the job to write a cover note for"),
+        }),
+        execute: async ({ jobId }) => {
+          if (!candidateId) return { error: "Candidate profile not found." };
+
+          const { data: job } = await supabase
+            .from("jobs")
+            .select("title, description, required_skills, location, employment_type, employer_profiles(company_name)")
+            .eq("id", jobId)
+            .single();
+          if (!job) return { error: "Job not found." };
+
+          const { data: coverCandidate } = await supabase
+            .from("candidate_profiles")
+            .select("name, bio, seeking, years_exp, job_title, candidate_skills(skills(name)), work_experiences(role, company, description)")
+            .eq("id", candidateId)
+            .single();
+          if (!coverCandidate) return { error: "Candidate profile not found." };
+
+          try {
+            const { text } = await generateText({
+              model: MODEL,
+              prompt: buildCoverNotePrompt(
+                job as unknown as CoverNoteJob,
+                coverCandidate as unknown as CoverNoteCandidate,
+              ),
+              maxOutputTokens: 512,
+            });
+            return { note: text.trim() };
+          } catch (error) {
+            console.error("[coach] draftCoverLetter error:", error);
+            return { error: "Failed to draft a cover note. Try again." };
+          }
+        },
+      },
+
+      analyzeSkillGap: {
+        description: "Build a focused learning roadmap toward a target role, given the specific skills the candidate is missing. Obtain the missing skills from getCareerPathOptions (its skillGaps) or a target job's required skills first, then call this.",
+        inputSchema: z.object({
+          targetRole: z.string().describe("The role the candidate wants to move toward"),
+          missingSkills: z.array(z.string()).min(1).describe("The skills the candidate needs to develop for the target role"),
+        }),
+        execute: async ({ targetRole, missingSkills }) => {
+          try {
+            const { text } = await generateText({
+              model: MODEL,
+              prompt: buildSkillGapPrompt(candidate?.job_title ?? "", targetRole, missingSkills),
+              maxOutputTokens: 800,
+            });
+            const roadmap = parseRoadmap(text);
+            if (!roadmap) return { error: "Failed to generate a roadmap. Try again." };
+            return { roadmap };
+          } catch (error) {
+            console.error("[coach] analyzeSkillGap error:", error);
+            return { error: "Failed to generate a roadmap. Try again." };
+          }
+        },
       },
 
       navigateTo: {
