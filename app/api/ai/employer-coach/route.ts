@@ -1,11 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { MODEL } from "@/lib/claude/client";
-import { streamText, stepCountIs, convertToModelMessages, type UIMessage } from "ai";
+import { streamText, generateText, stepCountIs, convertToModelMessages, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/validate";
 import { EMPLOYER_ROUTES } from "@/lib/agent-routes";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  buildJobDescriptionPrompt,
+  buildCandidateSummaries,
+  buildMatchPrompt,
+  parseMatchResults,
+  buildJobSummaries,
+  buildPoolCandidateSummaries,
+  buildReEngagePrompt,
+  parseSuggestions,
+  type CandidateWithSkills,
+  type ReEngageJob,
+  type PoolEntry,
+} from "@/lib/ai/employer-match";
 
 const Body = z.object({
   messages: z.array(z.record(z.string(), z.unknown())).min(1).max(50),
@@ -59,8 +72,9 @@ Format rules:
 - Use markdown. Use bullet lists or numbered steps when listing items.
 - One blank line between paragraphs or sections.
 
-You are equipped with tools to list this employer's jobs and applicants, post a new job, move an applicant to a different pipeline stage, save a candidate to the talent pool, update the company profile, and navigate the employer to a page.
+You are equipped with tools to list this employer's jobs and applicants, post a new job, move an applicant to a different pipeline stage, save a candidate to the talent pool, update the company profile, draft a job description from rough notes, rank best-fit candidates for a job, suggest talent-pool candidates to re-engage, and navigate the employer to a page.
 Always explain when you are running a tool and present the results clearly to the user.
+When writeJobDescription returns a description, present it verbatim in a markdown code block — do not paraphrase or shorten it — then offer to post it with createJob.
 If you post a job, move an applicant, save a candidate, or update the profile, confirm it clearly to the user.
 Use navigateTo when the user asks to go/see/open a specific page, or right after an action where showing them the result is the obvious next step (e.g. after posting a job, offer to take them to the jobs list).`;
 
@@ -246,6 +260,128 @@ Use navigateTo when the user asks to go/see/open a specific page, or right after
 
           if (error) return { error: `Failed to update profile: ${error.message}` };
           return { success: true, message: "Successfully updated company profile." };
+        },
+      },
+
+      writeJobDescription: {
+        description: "Draft a polished job description from the employer's rough notes. Generate-only — present the result verbatim, then offer to post it with createJob.",
+        inputSchema: z.object({
+          title: z.string().min(1).describe("Job title"),
+          location: z.string().optional().describe("Job location, e.g. Kuala Lumpur (Remote OK)"),
+          employmentType: z.string().optional().describe("full_time, part_time, internship, or contract"),
+          skills: z.array(z.string()).default([]).describe("Required skills for the role"),
+          roughNotes: z.string().min(1).describe("The employer's rough notes about the role"),
+        }),
+        execute: async ({ title, location, employmentType, skills, roughNotes }) => {
+          try {
+            const { text } = await generateText({
+              model: MODEL,
+              prompt: buildJobDescriptionPrompt({ title, location, employmentType, skills, roughNotes }),
+              maxOutputTokens: 800,
+            });
+            return { description: text.trim() };
+          } catch (error) {
+            console.error("[employer-coach] writeJobDescription error:", error);
+            return { error: "Failed to draft a job description. Try again." };
+          }
+        },
+      },
+
+      suggestCandidates: {
+        description: "Rank the best-fit candidates in the pool for one of this employer's jobs, by Job ID. Use listJobs first to get a Job ID.",
+        inputSchema: z.object({
+          jobId: z.string().describe("The UUID of the job to match candidates against"),
+        }),
+        execute: async ({ jobId }) => {
+          // Deterministic ownership pre-check — never trust the model to have verified the job is theirs.
+          const { data: job, error: jobError } = await supabase
+            .from("jobs")
+            .select("title, description, required_skills, employer_id")
+            .eq("id", jobId)
+            .single();
+
+          if (jobError || !job) return { error: "Job not found." };
+          if (job.employer_id !== employerId) {
+            return { error: "This job does not belong to your company." };
+          }
+
+          const { data: candidates } = await supabase
+            .from("candidate_profiles")
+            .select("id, name, job_title, years_exp, location, bio, seeking, candidate_skills(level, skills(name))")
+            .limit(50);
+
+          if (!candidates || candidates.length === 0) {
+            return { results: [], message: "No candidates in pool yet." };
+          }
+
+          const jobDescription = `${job.title}
+Required skills: ${job.required_skills?.join(", ") || "Not specified"}
+${job.description ?? ""}`;
+
+          try {
+            const { text } = await generateText({
+              model: MODEL,
+              prompt: buildMatchPrompt(
+                jobDescription,
+                buildCandidateSummaries(candidates as unknown as CandidateWithSkills[]),
+              ),
+              maxOutputTokens: 1024,
+            });
+            return { results: parseMatchResults(text) };
+          } catch (error) {
+            console.error("[employer-coach] suggestCandidates error:", error);
+            return { error: "Failed to match candidates. Try again." };
+          }
+        },
+      },
+
+      suggestPoolReEngagement: {
+        description: "Suggest candidates from this employer's talent pool (who haven't applied yet) to reach out to for open roles, with a ready-to-send outreach draft for each.",
+        inputSchema: z.object({}),
+        execute: async () => {
+          const [{ data: jobs }, { data: poolEntries }] = await Promise.all([
+            supabase
+              .from("jobs")
+              .select("id, title, location, employment_type, required_skills, description")
+              .eq("employer_id", employerId)
+              .eq("status", "open"),
+            supabase
+              .from("talent_pools")
+              .select("candidate_id, source, candidate_profiles(id, name, job_title, years_exp, location, seeking, bio, candidate_skills(level, skills(name)))")
+              .eq("employer_id", employerId),
+          ]);
+
+          if (!jobs || jobs.length === 0 || !poolEntries || poolEntries.length === 0) {
+            return { suggestions: [] };
+          }
+
+          // Deterministic pre-filter: exclude pool candidates who've already applied to an open
+          // role — checked in code, never delegated to the model (.claude/CLAUDE.md tool-call gotcha).
+          const { data: existingApplications } = await supabase
+            .from("applications")
+            .select("candidate_id")
+            .in("job_id", jobs.map((j) => j.id));
+
+          const alreadyEngagedIds = new Set((existingApplications ?? []).map((a) => a.candidate_id));
+          const eligiblePoolEntries = poolEntries.filter((entry) => !alreadyEngagedIds.has(entry.candidate_id));
+
+          if (eligiblePoolEntries.length === 0) return { suggestions: [] };
+
+          try {
+            const { text } = await generateText({
+              model: MODEL,
+              prompt: buildReEngagePrompt(
+                employer.company_name,
+                buildJobSummaries(jobs as unknown as ReEngageJob[]),
+                buildPoolCandidateSummaries(eligiblePoolEntries as unknown as PoolEntry[]),
+              ),
+              maxOutputTokens: 1024,
+            });
+            return { suggestions: parseSuggestions(text) };
+          } catch (error) {
+            console.error("[employer-coach] suggestPoolReEngagement error:", error);
+            return { suggestions: [] };
+          }
         },
       },
 

@@ -4,6 +4,7 @@ import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseBody } from "@/lib/validate";
+import { buildJobDescriptionPrompt } from "@/lib/ai/employer-match";
 
 const Body = z.object({
   title: z.string().trim().min(1).max(200),
@@ -22,21 +23,9 @@ export async function POST(req: Request) {
   if ("error" in parsed) return parsed.error;
   const { title, location, employmentType, skills, roughNotes } = parsed.data;
 
-  const prompt = `You are a professional technical recruiter. Write a polished job description based on the employer's rough notes below.
-
-Role: ${title}
-Location: ${location || "Not specified"}
-Employment type: ${employmentType?.replace("_", " ") || "Not specified"}
-Required skills: ${skills?.length ? skills.join(", ") : "Not specified"}
-
-Employer's rough notes:
-${roughNotes}
-
-Write 3-4 paragraphs covering: role overview, key responsibilities, requirements, and what the company offers. Plain text only — no markdown headers, no bullet points. Sound direct and specific. Return only the job description text.`;
-
   const { text } = await generateText({
     model: MODEL,
-    prompt,
+    prompt: buildJobDescriptionPrompt({ title, location, employmentType, skills, roughNotes }),
     maxOutputTokens: 800,
   });
 
