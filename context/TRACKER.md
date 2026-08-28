@@ -19,6 +19,7 @@ Update this file after every meaningful implementation change.
 - Demo mode - one-click seeded candidate + employer accounts, idempotent seeding
 - Design system pass: light/dark theme toggle, full token architecture, motion/animation layer (iris wipe, career spine, route reveal, pipeline drag physics)
 - Security hardening: CSP + security headers, RLS + grants on every table, SECURITY DEFINER RPCs for cross-boundary public reads, rate limiting on AI + public routes
+- Coach tool-activity chips: every agent tool call now renders a visible running→done/error chip inline in the transcript (was `navigateTo` only). Shared render extracted to `components/coach/CoachMessages.tsx` (`CoachMessageList` + `ToolActivity` + per-variant label maps); both `CoachChat.tsx` and `EmployerCoach.tsx` render it via a `variant` prop, deduping the previously twinned `messages.map`.
 - AI provider docs/deps cleanup: removed the unused `@ai-sdk/groq` dependency (no live code imported it - every route already used the Vercel AI Gateway `MODEL` string directly), rewrote `tests/api/job-fit.test.ts` to match the current deterministic (non-AI) implementation of that route and use valid UUIDs, and swept every doc (`README.md`, `TODO.md`, `.claude/CLAUDE.md`, `.claude/ARCHITECTURE.md`, `context/*.md`) so "Groq" only appears where it's genuinely historical
 
 ## In Progress

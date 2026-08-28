@@ -7,8 +7,7 @@ import { DefaultChatTransport, isToolUIPart, getToolName } from "ai";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import ReactMarkdown from "react-markdown";
-import { ArrowRight } from "lucide-react";
+import { CoachMessageList } from "@/components/coach/CoachMessages";
 
 const STARTER_PROMPTS = [
   "Post a new job for me",
@@ -16,11 +15,6 @@ const STARTER_PROMPTS = [
   "Who are my newest applicants?",
   "Move an applicant to shortlisted",
 ];
-
-function navLabel(path: string) {
-  const seg = path.split("/").filter(Boolean).pop() ?? "page";
-  return seg.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 export function EmployerCoach({
   companyName,
@@ -132,81 +126,7 @@ export function EmployerCoach({
           </div>
         )}
 
-        {messages.map((message, i) => {
-          const text = message.parts
-            .filter((part) => part.type === "text")
-            .map((part) => part.text)
-            .join("");
-          if (!text && message.role === "assistant" && !(streaming && i === messages.length - 1)) return null;
-
-          const navChips = message.role === "assistant"
-            ? message.parts
-                .filter(isToolUIPart)
-                .filter((part) => getToolName(part) === "navigateTo" && part.state === "output-available")
-            : [];
-
-          return (
-            <div
-              key={message.id}
-              className={cn("flex chat-rise", message.role === "user" ? "justify-end" : "justify-start")}
-            >
-              {message.role === "assistant" && (
-                <div className="w-6 h-6 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-xs shrink-0 mt-0.5 mr-2">
-                  ◉
-                </div>
-              )}
-              <div
-                className={cn(
-                  "max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-br-sm"
-                    : "glass border border-border text-foreground rounded-bl-sm"
-                )}
-              >
-                {message.role === "user" ? (
-                  text
-                ) : (
-                  <ReactMarkdown
-                    components={{
-                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                      ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-                      li: ({ children }) => <li>{children}</li>,
-                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                      code: ({ children }) => <code className="bg-muted px-1 rounded text-xs font-mono">{children}</code>,
-                    }}
-                  >
-                    {text}
-                  </ReactMarkdown>
-                )}
-                {message.role === "assistant" && streaming && i === messages.length - 1 && (
-                  text ? (
-                    <span className="coach-caret" aria-hidden="true" />
-                  ) : (
-                    <span className="coach-thinking" role="status" aria-label="Coach is thinking">
-                      <span className="coach-thinking-dot" style={{ "--i": 0 } as React.CSSProperties} />
-                      <span className="coach-thinking-dot" style={{ "--i": 1 } as React.CSSProperties} />
-                      <span className="coach-thinking-dot" style={{ "--i": 2 } as React.CSSProperties} />
-                    </span>
-                  )
-                )}
-                {navChips.map((part) => {
-                  const path = (part.output as { path?: string } | undefined)?.path;
-                  if (!path) return null;
-                  return (
-                    <span
-                      key={part.toolCallId}
-                      className="coach-nav-chip chat-rise mt-2 border border-brand/40 bg-brand-subtle/40 text-brand rounded-full px-2.5 py-1 text-xs font-medium"
-                    >
-                      <ArrowRight className="w-3 h-3" />
-                      Opening {navLabel(path)}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+        <CoachMessageList messages={messages} streaming={streaming} variant="employer" />
         {error && (
           <div className="flex flex-col items-center gap-2">
             <p className="text-sm text-destructive text-center">Something went wrong.</p>
