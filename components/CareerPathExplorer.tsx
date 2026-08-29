@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState, useEffect, useLayoutEffect, useMemo } from "react";
+import Link from "next/link";
 import ReactFlow, {
   Node,
   Edge,
@@ -40,6 +41,19 @@ import type { PathResult } from "@/lib/career-path";
 type CareerNode = Database["public"]["Tables"]["career_nodes"]["Row"];
 type CareerEdge = Database["public"]["Tables"]["career_edges"]["Row"];
 
+type OpenJob = {
+  id: string;
+  title: string;
+  location: string;
+  salary_min: number | null;
+  salary_max: number | null;
+  employer_profiles: { company_name: string } | null;
+};
+
+function normalizeTitle(title: string): string {
+  return title.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 type CareerNodeCardData = {
   node: CareerNode;
   isActive: boolean;
@@ -51,6 +65,8 @@ type CareerNodeCardData = {
   dimmed: boolean;
   /** bumps on every destination change so the reveal animation replays */
   revealKey: number;
+  /** count of open jobs whose title matches this node's title */
+  jobCount: number;
 };
 
 type CareerRouteEdgeData = {
@@ -141,7 +157,7 @@ function readSavedPositions(): Record<string, { x: number; y: number }> {
 }
 
 function CareerNodeCard({ data }: { data: CareerNodeCardData }) {
-  const { node, isActive, isTarget, isOnPath, hop, dimmed, revealKey } = data;
+  const { node, isActive, isTarget, isOnPath, hop, dimmed, revealKey, jobCount } = data;
   return (
     <>
       <Handle type="target" position={Position.Top} style={{ opacity: 0, pointerEvents: "none" }} />
@@ -173,6 +189,16 @@ function CareerNodeCard({ data }: { data: CareerNodeCardData }) {
         >
           RM {(node.avg_salary_myr_min / 1000).toFixed(0)}k–{(node.avg_salary_myr_max / 1000).toFixed(0)}k
         </p>
+        {jobCount > 0 && (
+          <p
+            className={cn(
+              "mt-1 inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full",
+              isActive ? "bg-primary-foreground/15 text-primary-foreground" : "bg-brand-subtle text-brand"
+            )}
+          >
+            {jobCount} open role{jobCount !== 1 ? "s" : ""}
+          </p>
+        )}
         {isTarget && (
           <p className="text-[9px] text-brand font-semibold mt-0.5 uppercase tracking-wide">Target</p>
         )}
@@ -275,6 +301,7 @@ export function CareerPathExplorer(props: {
   currentRole: string | null;
   seeking: string;
   candidateSkillNames: string[];
+  openJobs: OpenJob[];
 }) {
   return (
     <ReactFlowProvider>
@@ -289,12 +316,14 @@ function CareerPathExplorerInner({
   currentRole,
   seeking,
   candidateSkillNames,
+  openJobs,
 }: {
   nodes: CareerNode[];
   edges: CareerEdge[];
   currentRole: string | null;
   seeking: string;
   candidateSkillNames: string[];
+  openJobs: OpenJob[];
 }) {
   const { fitBounds } = useReactFlow();
   const storeApi = useStoreApi();
@@ -419,6 +448,18 @@ function CareerPathExplorerInner({
     if (bounds) fitBounds(bounds, { padding: 0.2, duration: 500 });
   }, [filterCategory, visibleNodes, defaultPositions, fitBounds]);
 
+  // Open jobs grouped by normalized title, for the graph badge + detail panel list
+  const jobsByTitle = useMemo(() => {
+    const map = new Map<string, OpenJob[]>();
+    for (const job of openJobs) {
+      const key = normalizeTitle(job.title);
+      const list = map.get(key);
+      if (list) list.push(job);
+      else map.set(key, [job]);
+    }
+    return map;
+  }, [openJobs]);
+
   // Build RF nodes — apply saved positions so drag layout survives data updates
   const categoryNodes = useMemo(() => {
     const pathIsActive = pathNodeHop.size > 0;
@@ -439,10 +480,11 @@ function CareerPathExplorerInner({
           hop,
           dimmed: pathIsActive && hop === null,
           revealKey,
+          jobCount: jobsByTitle.get(normalizeTitle(node.title))?.length ?? 0,
         } satisfies CareerNodeCardData,
       } as Node;
     });
-  }, [visibleNodes, currentNode, targetNodeId, pathNodeHop, defaultPositions, revealKey]);
+  }, [visibleNodes, currentNode, targetNodeId, pathNodeHop, defaultPositions, revealKey, jobsByTitle]);
 
   const categoryEdges = useMemo<Edge[]>(() => {
     const visibleIds = new Set(visibleNodes.map((n) => n.id));
@@ -608,6 +650,10 @@ function CareerPathExplorerInner({
       (currentNode && e.from_node_id === currentNode.id && e.to_node_id === selectedNode?.id) ||
       (currentNode && e.to_node_id === currentNode.id && e.from_node_id === selectedNode?.id)
   );
+
+  const openRolesForNode = selectedNode
+    ? jobsByTitle.get(normalizeTitle(selectedNode.title)) ?? []
+    : [];
 
   // Reset transient roadmap-request state during render when the selected node changes -
   // an effect-based reset fires after paint, so it'd show the previous node's stale roadmap
@@ -1008,6 +1054,35 @@ function CareerPathExplorerInner({
                     About this role
                   </p>
                   <p className="text-sm text-foreground leading-relaxed">{selectedNode.description}</p>
+                </div>
+              )}
+
+              {/* Open roles matching this node's title */}
+              {openRolesForNode.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-2">
+                    Open roles ({openRolesForNode.length})
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {openRolesForNode.slice(0, 5).map((job) => (
+                      <div key={job.id} className="bg-background rounded-lg border border-border p-3">
+                        <p className="text-sm font-medium text-foreground">
+                          {job.employer_profiles?.company_name ?? "Company"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{job.location}</p>
+                        {job.salary_min && job.salary_max && (
+                          <p className="text-xs text-brand font-medium tabular mt-1">
+                            RM {(job.salary_min / 1000).toFixed(1)}k–{(job.salary_max / 1000).toFixed(1)}k
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <Link href="/jobs" className="text-xs text-brand hover:underline mt-2 inline-block">
+                    {openRolesForNode.length > 5
+                      ? `+${openRolesForNode.length - 5} more in Job Board →`
+                      : "View in Job Board →"}
+                  </Link>
                 </div>
               )}
 

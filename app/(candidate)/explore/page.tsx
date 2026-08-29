@@ -18,13 +18,17 @@ export default async function ExplorePage() {
 
   if (!candidate) redirect("/onboarding");
 
-  const [{ data: nodes }, { data: edges }, { data: skills }] = await Promise.all([
+  const [{ data: nodes }, { data: edges }, { data: skills }, { data: openJobs }] = await Promise.all([
     supabase.from("career_nodes").select("*"),
     supabase.from("career_edges").select("*"),
     supabase
       .from("candidate_skills")
       .select("level, skills(name)")
       .eq("candidate_id", candidate.id),
+    supabase
+      .from("jobs")
+      .select("id, title, location, salary_min, salary_max, employer_profiles(company_name)")
+      .eq("status", "open"),
   ]);
 
   const candidateSkillNames: string[] = (
@@ -40,6 +44,16 @@ export default async function ExplorePage() {
       currentRole={candidate.job_title}
       seeking={candidate.seeking}
       candidateSkillNames={candidateSkillNames}
+      openJobs={
+        (openJobs ?? []) as unknown as {
+          id: string;
+          title: string;
+          location: string;
+          salary_min: number | null;
+          salary_max: number | null;
+          employer_profiles: { company_name: string } | null;
+        }[]
+      }
     />
   );
 }

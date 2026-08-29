@@ -21,6 +21,7 @@ Update this file after every meaningful implementation change.
 - Security hardening: CSP + security headers, RLS + grants on every table, SECURITY DEFINER RPCs for cross-boundary public reads, rate limiting on AI + public routes
 - Coach tool-activity chips: every agent tool call now renders a visible running→done/error chip inline in the transcript (was `navigateTo` only). Shared render extracted to `components/coach/CoachMessages.tsx` (`CoachMessageList` + `ToolActivity` + per-variant label maps); both `CoachChat.tsx` and `EmployerCoach.tsx` render it via a `variant` prop, deduping the previously twinned `messages.map`.
 - AI provider docs/deps cleanup: removed the unused `@ai-sdk/groq` dependency (no live code imported it - every route already used the Vercel AI Gateway `MODEL` string directly), rewrote `tests/api/job-fit.test.ts` to match the current deterministic (non-AI) implementation of that route and use valid UUIDs, and swept every doc (`README.md`, `TODO.md`, `.claude/CLAUDE.md`, `.claude/ARCHITECTURE.md`, `context/*.md`) so "Groq" only appears where it's genuinely historical
+- Open jobs on Explore Paths: career graph now fetches `jobs` (`status = 'open'`) and matches them to `career_nodes` by normalized exact title, surfacing a job-count badge on graph nodes and an "Open roles" list (capped at 5, link to `/jobs`) in the node detail panel. See `.claude/ARCHITECTURE.md` Explore section for the matching/memo details.
 
 ## In Progress
 
