@@ -205,6 +205,11 @@ const markdownComponents = {
   code: ({ children }: { children?: React.ReactNode }) => (
     <code className="bg-muted px-1 rounded text-xs font-mono">{children}</code>
   ),
+  pre: ({ children }: { children?: React.ReactNode }) => (
+    <pre className="mb-2 last:mb-0 whitespace-pre-wrap break-words overflow-x-auto rounded bg-muted p-2 text-xs font-mono [&_code]:bg-transparent [&_code]:px-0">
+      {children}
+    </pre>
+  ),
 };
 
 export function CoachMessageList({
@@ -228,7 +233,7 @@ export function CoachMessageList({
             .join("");
           return (
             <div key={message.id} className="flex chat-rise justify-end">
-              <div className="max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed bg-primary text-primary-foreground rounded-br-sm">
+              <div className="max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed break-words bg-primary text-primary-foreground rounded-br-sm">
                 {text}
               </div>
             </div>
@@ -245,7 +250,7 @@ export function CoachMessageList({
             <div className="w-6 h-6 rounded-full bg-brand-subtle flex items-center justify-center text-brand text-xs shrink-0 mt-0.5 mr-2">
               ◉
             </div>
-            <div className="max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed glass border border-border text-foreground rounded-bl-sm">
+            <div className="max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed break-words glass border border-border text-foreground rounded-bl-sm">
               {message.parts.map((part, pi) => {
                 if (part.type === "text") {
                   if (!part.text) return null;
