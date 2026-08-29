@@ -647,7 +647,6 @@ async function main() {
   const techCorpPipelinePlan: { candidateIdx: number; jobIdx: number; status: string }[] = [
     { candidateIdx: 0, jobIdx: 0, status: "applied" },
     { candidateIdx: 1, jobIdx: 0, status: "reviewed" },
-    { candidateIdx: 2, jobIdx: 1, status: "shortlisted" },
     { candidateIdx: 0, jobIdx: 1, status: "offered" },
     { candidateIdx: 1, jobIdx: 2, status: "rejected" },
     { candidateIdx: 3, jobIdx: 2, status: "applied" },

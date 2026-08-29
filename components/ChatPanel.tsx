@@ -9,28 +9,27 @@ export function ChatPanel({
   open: boolean;
   children: React.ReactNode;
 }) {
-  // Two layout modes on one always-mounted element (so the chat's state survives
-  // close/reopen and navigation):
-  //  - Mobile: a fixed, full-width overlay. overflow-hidden clips the off-canvas
-  //    inner so sliding it out never adds horizontal page scroll.
+  // Two layout modes, only one mounted at a time on mobile (a Tailwind v4
+  // `translate` toggle here silently no-ops in some renders and leaves the
+  // panel visually stuck open, so mobile visibility uses plain display
+  // instead of a slide transform):
+  //  - Mobile: a fixed, full-width overlay, shown/hidden outright.
   //  - Desktop (md+): a real in-flow flex column beside <main> — sticky, full
-  //    height, its width animating 0 <-> 420px. Because it's a genuine flex item,
-  //    <main> reflows on its own; no margin/padding hack needed.
+  //    height, always mounted, its width animating 0 <-> 420px. Because it's
+  //    a genuine flex item, <main> reflows on its own; no margin/padding hack
+  //    needed.
   return (
     <div
       className={cn(
-        "fixed inset-y-0 right-0 z-50 w-full overflow-hidden pointer-events-none",
-        "md:sticky md:inset-y-auto md:right-auto md:top-0 md:z-auto md:h-screen md:shrink-0 md:pointer-events-auto md:motion-safe:transition-[width] md:motion-safe:duration-300",
+        "fixed inset-y-0 right-0 z-50 w-full overflow-hidden",
+        open ? "flex" : "hidden",
+        "md:flex md:sticky md:inset-y-auto md:right-auto md:top-0 md:z-auto md:h-screen md:shrink-0 md:motion-safe:transition-[width] md:motion-safe:duration-300",
         open ? "md:w-[420px]" : "md:w-0"
       )}
     >
       <div
         aria-hidden={!open}
-        className={cn(
-          "glass border-l border-border flex flex-col h-full w-full md:w-[420px] md:shrink-0 pointer-events-auto",
-          "motion-safe:transition-transform motion-safe:duration-300 md:transition-none",
-          open ? "translate-x-0" : "translate-x-full md:translate-x-0"
-        )}
+        className="glass border-l border-border flex flex-col h-full w-full md:w-[420px] md:shrink-0"
       >
         {children}
       </div>

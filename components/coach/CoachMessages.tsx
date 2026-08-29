@@ -3,6 +3,7 @@
 import { isToolUIPart, getToolName, type UIMessage } from "ai";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ArrowRight, Check, AlertCircle, Loader2 } from "lucide-react";
 
 export type CoachVariant = "candidate" | "employer";
@@ -210,6 +211,18 @@ const markdownComponents = {
       {children}
     </pre>
   ),
+  table: ({ children }: { children?: React.ReactNode }) => (
+    <div className="mb-2 last:mb-0 overflow-x-auto">
+      <table className="w-full border-collapse text-xs">{children}</table>
+    </div>
+  ),
+  thead: ({ children }: { children?: React.ReactNode }) => <thead className="bg-muted">{children}</thead>,
+  tbody: ({ children }: { children?: React.ReactNode }) => <tbody>{children}</tbody>,
+  tr: ({ children }: { children?: React.ReactNode }) => <tr className="border-b border-border">{children}</tr>,
+  th: ({ children }: { children?: React.ReactNode }) => (
+    <th className="border border-border px-2 py-1 text-left font-semibold">{children}</th>
+  ),
+  td: ({ children }: { children?: React.ReactNode }) => <td className="border border-border px-2 py-1">{children}</td>,
 };
 
 export function CoachMessageList({
@@ -255,7 +268,7 @@ export function CoachMessageList({
                 if (part.type === "text") {
                   if (!part.text) return null;
                   return (
-                    <ReactMarkdown key={pi} components={markdownComponents}>
+                    <ReactMarkdown key={pi} remarkPlugins={[remarkGfm]} components={markdownComponents}>
                       {part.text}
                     </ReactMarkdown>
                   );
