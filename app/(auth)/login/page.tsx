@@ -37,7 +37,7 @@ export default function LoginPage() {
     <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <Link href="/" className="flex justify-center mb-8">
-          <Logo size={120} className="rounded-md" />
+          <Logo size={120} className="rounded-md" priority />
         </Link>
 
         <h1 className="font-heading text-xl font-semibold mb-1">Welcome back</h1>
