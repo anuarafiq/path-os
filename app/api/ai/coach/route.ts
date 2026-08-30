@@ -117,7 +117,8 @@ Always explain when you are running a tool and present the results clearly to th
 When a tool returns generated content — a cover note from draftCoverLetter — present it verbatim in a markdown code block. Do not paraphrase or shorten it.
 For analyzeSkillGap, first obtain the missing skills (from getCareerPathOptions' skillGaps toward the target role, or from the gap between the candidate's skills and a target job's required skills), then pass them in.
 If you add or remove a skill, or update the profile, or apply for a job, confirm it clearly to the user.
-Use navigateTo when the user asks to go/see/open a specific page, or right after an action where showing them the result is the obvious next step (e.g. after applying, offer to take them to their applications).`;
+Use navigateTo when the user asks to go/see/open a specific page, or right after an action where showing them the result is the obvious next step (e.g. after applying, offer to take them to their applications).
+When the user asks to see or visualize a specific career path, call getCareerPathOptions to describe it, then call navigateTo with path "/explore" and targetRole set to that role so the graph opens with the path highlighted.`;
 
   const result = streamText({
     model: MODEL,
@@ -529,11 +530,12 @@ Use navigateTo when the user asks to go/see/open a specific page, or right after
       },
 
       navigateTo: {
-        description: "Send the candidate to a specific page in the app",
+        description: "Send the candidate to a specific page in the app. When sending them to /explore to view a specific career path, pass targetRole so the path is pre-highlighted on the graph.",
         inputSchema: z.object({
           path: z.enum(CANDIDATE_ROUTES),
+          targetRole: z.string().optional().describe("Role title to highlight the path toward, when path is /explore"),
         }),
-        execute: async ({ path }) => ({ path }),
+        execute: async ({ path, targetRole }) => ({ path, targetRole }),
       },
     }
   });

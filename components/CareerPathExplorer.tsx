@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, useEffect, useLayoutEffect, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import ReactFlow, {
   Node,
   Edge,
@@ -334,10 +335,28 @@ function CareerPathExplorerInner({
   // hydration mismatch. useLayoutEffect runs after hydration but before paint, so the
   // stored destination still appears in the very first frame the user sees.
   const [targetNodeId, setTargetNodeId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
   useLayoutEffect(() => {
+    const targetRole = searchParams.get("target");
+    if (targetRole) {
+      const matched = careerNodes.find(
+        (n) => n.title.toLowerCase() === targetRole.toLowerCase()
+      );
+      if (matched) {
+        setTargetNodeId(matched.id);
+        localStorage.setItem("career-explore-target", matched.id);
+      }
+      router.replace("/explore");
+      return;
+    }
     const stored = localStorage.getItem("career-explore-target");
     if (stored) setTargetNodeId(stored);
-  }, []);
+    // Re-runs on searchParams change (not just mount) — CoachChat is mounted globally and
+    // stays alive across in-page navigations, so a second chat-driven "?target=" while
+    // already on /explore updates the query without remounting this component.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- careerNodes/router intentionally excluded, see above
+  }, [searchParams]);
   const [filterCategory, setFilterCategory] = useState<string>(() => {
     const match = careerNodes.find(
       (n) => n.title.toLowerCase() === (currentRole?.toLowerCase() ?? "")

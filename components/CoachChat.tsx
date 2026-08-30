@@ -55,9 +55,13 @@ export function CoachChat({
           !navigatedToolCallIds.current.has(part.toolCallId)
         ) {
           navigatedToolCallIds.current.add(part.toolCallId);
-          const path = (part.output as { path?: string } | undefined)?.path;
+          const output = part.output as { path?: string; targetRole?: string } | undefined;
+          const path = output?.path;
           if (path) {
-            router.push(path);
+            const url = output?.targetRole
+              ? `${path}?target=${encodeURIComponent(output.targetRole)}`
+              : path;
+            router.push(url);
             router.refresh();
           }
         }
