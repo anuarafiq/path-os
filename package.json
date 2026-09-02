@@ -21,6 +21,7 @@
     "@react-three/fiber": "^9.7.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
+    "@vercel/analytics": "^2.0.1",
     "@xyflow/react": "^12.11.0",
     "ai": "^6.0.197",
     "class-variance-authority": "^0.7.1",

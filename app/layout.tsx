@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Bricolage_Grotesque } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageBeams } from "@/components/PageBeams";
 import "./globals.css";
@@ -105,6 +106,7 @@ export default function RootLayout({
           <PageBeams />
           {children}
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
